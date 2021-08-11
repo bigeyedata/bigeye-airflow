@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bigeye-airflow",
-    version="0.0.3",
+    version="0.0.5",
     author="Bigeye",
     author_email="support@bigeye.com",
     description="Airflow operators to be used with Bigeye",

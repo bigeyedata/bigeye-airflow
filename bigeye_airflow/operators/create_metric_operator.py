@@ -100,9 +100,6 @@ class CreateMetricOperator(BaseOperator):
                 "intervalType": "DAYS_TIME_INTERVAL_TYPE",
                 "intervalValue": 1
             },
-            # 24 hour window mexis metric
-            "lookbackType": "METRIC_TIME_LOOKBACK_TYPE",
-            "grainSeconds": 86400,
             "notificationChannels": self._get_notification_channels(notifications)
         }
         if existing_metric is None:
@@ -158,7 +155,8 @@ class CreateMetricOperator(BaseOperator):
     def _is_same_type_metric(self, metric, metric_name):
         keys = ["metricType", "predefinedMetric", "metricName"]
         result = reduce(lambda val, key: val.get(key) if val else None, keys, metric)
-        return result is not None and result == metric_name
+        both_metrics_freshness = self._is_freshness_metric(result) and self._is_freshness_metric(metric_name)
+        return result is not None and (result == metric_name or both_metrics_freshness)
 
     def _get_table_for_name(self, schema_name, table_name):
         hook = self.get_hook('GET')
