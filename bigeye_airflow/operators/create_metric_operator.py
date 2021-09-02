@@ -51,6 +51,8 @@ class CreateMetricOperator(BaseOperator):
             lookback_days = c.get("lookback_days", 2)
             window_size_seconds = self._get_seconds_from_window_size(c.get("window_size", "1 day"))
             thresholds = c.get("thresholds", [])
+            filters = c.get("filters", [])
+            group_by = c.get("group_by", [])
             if metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
             table = self._get_table_for_name(schema_name, table_name)
@@ -59,7 +61,8 @@ class CreateMetricOperator(BaseOperator):
             existing_metric = self._get_existing_metric(table, column_name, metric_name)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
-                                             metric_name, lookback_type, lookback_days, window_size_seconds, thresholds)
+                                             metric_name, lookback_type, lookback_days, window_size_seconds, thresholds,
+                                             filters, group_by)
             logging.info("Sending metric to create: %s", metric)
             if metric.get("id") is None and not self._is_freshness_metric(metric_name):
                 should_backfill = True
@@ -69,10 +72,16 @@ class CreateMetricOperator(BaseOperator):
                                           data=json.dumps(metric))
             logging.info("Create metric status: %s", result.status_code)
             logging.info("Create result: %s", result.json())
-            if should_backfill and result.json().get("id") is not None:
+            if should_backfill and result.json().get("id") is not None and self._table_has_metric_time(table):
                 bigeye_post_hook.run("api/v1/metrics/backfill",
                                      headers={"Content-Type": "application/json", "Accept": "application/json"},
                                      data=json.dumps({"metricIds": [result.json()["id"]]}))
+
+    def _table_has_metric_time(self, table):
+        for field in table["fields"]:
+            if field["loadedDateField"]:
+                return True
+        return False
 
     def _get_seconds_from_window_size(self, window_size):
         if window_size == "1 day":
@@ -87,7 +96,7 @@ class CreateMetricOperator(BaseOperator):
 
     def _get_metric_object(self, existing_metric, table, notifications, column_name, update_schedule, delay_at_update,
                            timezone, default_check_frequency_hours, metric_name, lookback_type, lookback_days,
-                           window_size_seconds, thresholds):
+                           window_size_seconds, thresholds, filters, group_by):
         is_freshness_metric = self._is_freshness_metric(metric_name)
         if is_freshness_metric:
             metric_name = self._get_freshness_metric_name_for_field(table, column_name)
@@ -118,6 +127,8 @@ class CreateMetricOperator(BaseOperator):
             "intervalValue": lookback_days
             },
             "notificationChannels": self._get_notification_channels(notifications),
+            "filters": filters,
+            "groupBys": group_by,
         }
         if not is_freshness_metric:
             for field in table["fields"]:
