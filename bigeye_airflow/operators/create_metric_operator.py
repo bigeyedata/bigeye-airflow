@@ -58,7 +58,7 @@ class CreateMetricOperator(BaseOperator):
             table = self._get_table_for_name(schema_name, table_name)
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", schema_name, table_name)
-            existing_metric = self._get_existing_metric(table, column_name, metric_name)
+            existing_metric = self._get_existing_metric(table, column_name, metric_name, group_by)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
                                              metric_name, lookback_type, lookback_days, window_size_seconds, thresholds,
@@ -130,19 +130,22 @@ class CreateMetricOperator(BaseOperator):
             "filters": filters,
             "groupBys": group_by,
         }
+        table_has_metric_time = False
         if not is_freshness_metric:
             for field in table["fields"]:
                 if field["loadedDateField"]:
-                    metric["lookbackType"] = lookback_type
-                    if lookback_type == "METRIC_TIME_LOOKBACK_TYPE":
-                        metric["grainSeconds"] = window_size_seconds
+                    table_has_metric_time = True
+        if table_has_metric_time:
+            metric["lookbackType"] = lookback_type
+            if lookback_type == "METRIC_TIME_LOOKBACK_TYPE":
+                metric["grainSeconds"] = window_size_seconds
         if existing_metric is None:
             return metric
         else:
             existing_metric["thresholds"] = metric["thresholds"]
             existing_metric["notificationChannels"] = metric.get("notificationChannels", [])
             existing_metric["scheduleFrequency"] = metric["scheduleFrequency"]
-            if not is_freshness_metric:
+            if not is_freshness_metric and table_has_metric_time:
                 existing_metric["lookbackType"] = metric["lookbackType"]
                 existing_metric["lookback"] = metric["lookback"]
                 existing_metric["grainSeconds"] = metric["grainSeconds"]
@@ -177,7 +180,7 @@ class CreateMetricOperator(BaseOperator):
                                "modelType": "UNDEFINED_THRESHOLD_MODEL_TYPE"}}
         ]
 
-    def _get_existing_metric(self, table, column_name, metric_name):
+    def _get_existing_metric(self, table, column_name, metric_name, group_by):
         hook = self.get_hook('GET')
         result = hook.run("api/v1/metrics?warehouseIds={warehouse_id}&tableIds={table_id}"
                           .format(warehouse_id=self.warehouse_id,
@@ -185,20 +188,21 @@ class CreateMetricOperator(BaseOperator):
                           headers={"Accept": "application/json"})
         metrics = result.json()
         for m in metrics:
-            if self._is_same_type_metric(m, metric_name) and self._is_same_column_metric(m, column_name):
+            if self._is_same_type_metric(m, metric_name, group_by) and self._is_same_column_metric(m, column_name):
                 return m
         return None
 
     def _is_same_column_metric(self, m, column_name):
         return m["parameters"][0].get("columnName").lower() == column_name.lower()
 
-    def _is_same_type_metric(self, metric, metric_name):
+    def _is_same_type_metric(self, metric, metric_name, group_by):
         keys = ["metricType", "predefinedMetric", "metricName"]
         result = reduce(lambda val, key: val.get(key) if val else None, keys, metric)
         if result is None:
             return False
         both_metrics_freshness = self._is_freshness_metric(result) and self._is_freshness_metric(metric_name)
-        return result is not None and (result == metric_name or both_metrics_freshness)
+        same_group_by = metric.get('groupBys', []) == group_by
+        return result is not None and (result == metric_name or both_metrics_freshness) and same_group_by
 
     def _get_table_for_name(self, schema_name, table_name):
         hook = self.get_hook('GET')
