@@ -1,15 +1,58 @@
 import datetime
 import logging
 import json
+from dataclasses import dataclass, field
 from functools import reduce
+from typing import List, Dict
 
 from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
+from bigeye_airflow.operators import _get_seconds_from_window_size
+
+
+@dataclass
+class CreateMetricConfiguration:
+    table_name: str
+    schema_name: str
+    column_name: str
+    metric_name: str
+    notifications: list = field(default_factory=lambda: [])
+    thresholds: list = field(default_factory=lambda: [])
+    filters: list = field(default_factory=lambda: [])
+    group_by: list = field(default_factory=lambda: [])
+    default_check_frequency_hours: int = 2
+    update_schedule = None
+    delay_at_update: str = "0 minutes"
+    timezone: str = "UTC"
+    should_backfill: bool = False
+    lookback_type: str = "METRIC_TIME_LOOKBACK_TYPE"
+    lookback_days: int = 2
+    window_size: str = "1 day"
+    window_size_seconds = _get_seconds_from_window_size(window_size)
+
+
+@dataclass
+class TableIndexEntry:
+    """
+    TableIndexEntry is used to track tables per schema and enforce a relationship between a lowercase key and both the
+    table_name and table_id.  E.G. { 'accounts': { 'table_name': 'Accounts', 'table_id': 12345 }}.  This dictionary
+    can be used as both a conversion between a lowercase to case sensitive version of the table name AND as an index
+    of available tables to reduce round trips to the API.
+    """
+    table_name: str
+    table_id: int
+
+
+@dataclass
+class SchemaIndexEntry:
+    schema_name: str
+    schema_id: str
+    table_ix: Dict[str, TableIndexEntry]
+
 
 class CreateMetricOperator(BaseOperator):
-
     # Only for Python 3.8+
     # TODO - find a way to check what Python version is running
     # class FreshnessConfig(TypedDict, total=False):
@@ -25,9 +68,7 @@ class CreateMetricOperator(BaseOperator):
     def __init__(self,
                  connection_id: str,
                  warehouse_id: int,
-                 configuration: list(dict(schema_name=None, table_name=None, column_name=None,
-                                          update_schedule=None, metric_name=None,
-                                          extras=...)),
+                 configuration: List[CreateMetricConfiguration],
                  *args,
                  **kwargs):
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
@@ -35,30 +76,18 @@ class CreateMetricOperator(BaseOperator):
         self.warehouse_id = warehouse_id
         self.configuration = configuration
 
+        # Dictionary to reduce round trips to the API { <schema_name>
+        self.catalog_ix = Dict[str, SchemaIndexEntry]
+
     def execute(self, context):
+        # Iterate each configuration
         for c in self.configuration:
-            table_name = c["table_name"]
-            schema_name = c["schema_name"]
-            column_name = c["column_name"]
-            default_check_frequency_hours = c.get("default_check_frequency_hours", 2)
-            update_schedule = c.get("update_schedule", None)
-            delay_at_update = c.get("delay_at_update", "0 minutes")
-            timezone = c.get("timezone", "UTC")
-            notifications = c.get("notifications", [])
-            metric_name = c.get("metric_name")
-            should_backfill = c.get("should_backfill", False)
-            lookback_type = c.get("lookback_type", "METRIC_TIME_LOOKBACK_TYPE")
-            lookback_days = c.get("lookback_days", 2)
-            window_size_seconds = self._get_seconds_from_window_size(c.get("window_size", "1 day"))
-            thresholds = c.get("thresholds", [])
-            filters = c.get("filters", [])
-            group_by = c.get("group_by", [])
-            if metric_name is None:
+            if c.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
-            table = self._get_table_for_name(schema_name, table_name)
+            table = self._get_table_for_name(c.schema_name, c.table_name)
             if table is None or table.get("id") is None:
-                raise Exception("Could not find table: ", schema_name, table_name)
-            existing_metric = self._get_existing_metric(table, column_name, metric_name, group_by)
+                raise Exception("Could not find table: ", c.schema_name, c.table_name)
+            existing_metric = self._get_existing_metric(table, c.column_name, c.metric_name, c.group_by)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
                                              metric_name, lookback_type, lookback_days, window_size_seconds, thresholds,
@@ -82,14 +111,6 @@ class CreateMetricOperator(BaseOperator):
             if field["loadedDateField"]:
                 return True
         return False
-
-    def _get_seconds_from_window_size(self, window_size):
-        if window_size == "1 day":
-            return 86400
-        elif window_size == "1 hour":
-            return 3600
-        else:
-            raise Exception("Can only set window size of '1 hour' or '1 day'")
 
     def get_hook(self, method) -> HttpHook:
         return HttpHook(http_conn_id=self.connection_id, method=method)
@@ -123,8 +144,8 @@ class CreateMetricOperator(BaseOperator):
                 }
             ],
             "lookback": {
-            "intervalType": "DAYS_TIME_INTERVAL_TYPE",
-            "intervalValue": lookback_days
+                "intervalType": "DAYS_TIME_INTERVAL_TYPE",
+                "intervalValue": lookback_days
             },
             "notificationChannels": self._get_notification_channels(notifications),
             "filters": filters,
