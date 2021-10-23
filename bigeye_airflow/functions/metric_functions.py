@@ -170,7 +170,7 @@ def build_metric_object(warehouse_id, existing_metric, table, conf):  # TODO: wh
 
     table_has_metric_time = False
 
-    if not ifm:
+    if not ifm:  # TODO: Look into repeated logic.
         for field in table["fields"]:
             if field["loadedDateField"]:
                 table_has_metric_time = True
