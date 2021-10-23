@@ -56,17 +56,19 @@ class CreateMetricOperator(BaseOperator):
     def execute(self, context):
         # Iterate each configuration
         for c in self.configuration:
+
             if c.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
             table: dict = self._get_table_entry_for_name(c.schema_name, c.table_name)
 
+            # Validate and replace group column names -- to ameliorate incorrect case.
+            c.group_by = [table['fields'][col.lower()]['fieldName'] for col in c.group_by]
+
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
             existing_metric = get_existing_metric(table, c.column_name, c.metric_name, c.group_by)
-
-            # Stopped Refactoring Here.
 
             metric = build_metric_object(existing_metric, table, c)
 
