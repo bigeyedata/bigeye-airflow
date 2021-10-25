@@ -6,8 +6,8 @@ from airflow.utils.decorators import apply_defaults
 
 from bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, table_has_metric_time
 from bigeye_airflow.models.configurations import CreateMetricConfiguration
-from bigeye_airflow.requests.catalog_requests import get_asset_ix
-from bigeye_airflow.requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
+from bigeye_airflow.bigeye_requests.catalog_requests import get_asset_ix
+from bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
 
 
 class CreateMetricOperator(BaseOperator):

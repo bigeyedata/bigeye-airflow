@@ -1,10 +1,10 @@
 import json
 from typing import List
 
-from bigeye_airflow.functions.metric_functions import is_same_type_metric, is_same_column_metric, \
-    is_freshness_metric, _table_has_metric_time
-from bigeye_airflow.requests import get_hook
+from bigeye_airflow.functions.metric_functions import is_same_type_metric, is_same_column_metric
 import logging
+
+from bigeye_requests.http_hook import get_hook
 
 
 def get_existing_metric(connection_id: str, warehouse_id: int, table: dict, column_name: str, metric_name: str,
@@ -21,10 +21,10 @@ def get_existing_metric(connection_id: str, warehouse_id: int, table: dict, colu
     return None
 
 
-def upsert_metric(metric: str):
+def upsert_metric(connection_id: str, metric: str):
     logging.info("Sending metric to create: %s", metric)
 
-    bigeye_post_hook = get_hook('POST')
+    bigeye_post_hook = get_hook(connection_id, 'POST')
 
     result = bigeye_post_hook.run("api/v1/metrics",
                                   headers={"Content-Type": "application/json", "Accept": "application/json"},
@@ -37,8 +37,8 @@ def upsert_metric(metric: str):
     return result
 
 
-def backfill_metric(metric_ids: List[int]):
-    bigeye_post_hook = get_hook('POST')
+def backfill_metric(connection_id: str, metric_ids: List[int]):
+    bigeye_post_hook = get_hook(connection_id, 'POST')
     bigeye_post_hook.run("api/v1/metrics/backfill",
                          headers={"Content-Type": "application/json", "Accept": "application/json"},
                          data=json.dumps({"metricIds": metric_ids}))

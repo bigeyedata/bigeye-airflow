@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from bigeye_airflow.models.configurations import CreateMetricConfiguration
-from bigeye_airflow.requests import get_hook
+from models.configurations import CreateMetricConfiguration
+from bigeye_requests.http_hook import get_hook
 
 
 def _transform_table_field_list_to_dict(table: dict) -> dict:
@@ -13,6 +13,9 @@ def _transform_table_field_list_to_dict(table: dict) -> dict:
     """
     table['fields'] = {f['fieldName'].lower(): f for f in table['fields']}
     return table
+
+def _transform_table_list_to_dict(tables: List[dict]) -> dict:
+    return {t['datasetName'].lower(): _transform_table_field_list_to_dict(t) for t in tables}
 
 
 def _get_schema_tables_json(connection_id: str, warehouse_id: int, schema_name: str) -> Dict[str, dict]:
@@ -30,7 +33,7 @@ def _get_schema_tables_json(connection_id: str, warehouse_id: int, schema_name: 
                               schema_name=schema_name),
                       headers={"Accept": "application/json"}).json()
 
-    return {t['datasetName'].lower(): _transform_table_field_list_to_dict(t) for t in tables}
+    return _transform_table_list_to_dict(tables)
 
 
 def get_asset_ix(connection_id: str, warehouse_id: int, conf: List[CreateMetricConfiguration]) -> dict:
