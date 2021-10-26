@@ -27,7 +27,7 @@ class CreateMetricOperator(BaseOperator):
     def __init__(self,
                  connection_id: str,
                  warehouse_id: int,
-                 configuration: dict,
+                 configuration: List[dict],
                  *args,
                  **kwargs):
         """
