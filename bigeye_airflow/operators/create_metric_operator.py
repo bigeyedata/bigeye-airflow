@@ -64,7 +64,7 @@ class CreateMetricOperator(BaseOperator):
         :param table_name: name of table
         :return: table entry as a dictionary
         """
-        return self.asset_ix[schema_name.lower()][table_name.lower]
+        return self.asset_ix[schema_name.lower()][table_name.lower()]
 
     def execute(self, context):
         # Iterate each configuration
