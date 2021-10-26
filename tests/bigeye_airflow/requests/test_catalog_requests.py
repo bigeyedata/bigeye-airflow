@@ -12,6 +12,7 @@ def get_sample_response():
     with open(DATASET_TABLES_RESPONSE_FILE, 'r') as f:
         return json.load(f)
 
+
 def get_sample_response_expected_transformed_output():
     with open(DATASET_TABLES_TRANSFORMED_OUTPUT_FILE, 'r') as f:
         return json.load(f)
