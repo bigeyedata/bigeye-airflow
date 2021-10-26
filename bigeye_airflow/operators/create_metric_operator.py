@@ -27,23 +27,36 @@ class CreateMetricOperator(BaseOperator):
     def __init__(self,
                  connection_id: str,
                  warehouse_id: int,
-                 configuration: List[dict],
+                 metric_configs: List[dict] = None,
+                 s3_configuration: str = None,
                  *args,
                  **kwargs):
         """
         :param connection_id: string containing basic auth TODO: research auth here.
         :param warehouse_id: int id of the warehouse where the the operator will upsert the metrics.
-        :param configuration: list of metric configurations to upsert
+        :param metric_configs: list of metric configurations to upsert
+        :param s3_configuration: file containing list of metric configurations to upsert
         :param args: not currently supported TODO: are we using?
         :param kwargs: not currently supported TODO: are we using?
         """
+
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
-        self.configuration: List[CreateMetricConfiguration] = [CreateMetricConfiguration(**c) for c in configuration]
 
-        # Dictionary to reduce round trips to the API
-        self.asset_ix = get_asset_ix(self.connection_id, self.warehouse_id, self.configuration)
+        if metric_configs and s3_configuration:
+            raise Exception('Both configuration and configuration_s3_uri cannot have value.')
+        if metric_configs:
+            self.asset_ix = get_asset_ix(self.connection_id,
+                                         self.warehouse_id,
+                                         [CreateMetricConfiguration(**c) for c in
+                                          metric_configs]
+                                         )
+        if s3_configuration:
+            raise Exception('Lading configurations from S3 not yet available.')
+            # self.asset_ix = [{}]
+        else:
+            raise Exception('Either configuration or configuration_s3_uri must have value.')
 
     def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
         """
