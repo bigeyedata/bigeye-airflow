@@ -1,1 +1,1 @@
-./bigeye_airflow/
+include/bigeye_airflow-0.0.12-py3-none-any.whl
