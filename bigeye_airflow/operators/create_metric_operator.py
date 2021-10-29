@@ -59,15 +59,20 @@ class CreateMetricOperator(BaseOperator):
 
             table: dict = self._get_table_entry_for_name(c.schema_name, c.table_name)
 
+            logging.info(table)
+
             # Validate and replace group column names -- to ameliorate incorrect case.
             c.group_by = [table['fields'][col.lower()]['fieldName'] for col in c.group_by]
 
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
-            existing_metric = get_existing_metric(table, c.column_name, c.metric_name, c.group_by)
+            existing_metric = get_existing_metric(self.connection_id, self.warehouse_id, table, c.column_name, c.metric_name, c.group_by)
 
-            metric = build_metric_object(existing_metric, table, c)
+            metric = build_metric_object(warehouse_id=self.warehouse_id
+                                         , existing_metric=existing_metric
+                                         , table=table
+                                         , conf=c)
 
             if metric.get("id") is None and not is_freshness_metric(c.metric_name):
                 c.should_backfill = True

@@ -8,7 +8,7 @@ from bigeye_airflow.bigeye_requests.http_hook import get_hook
 
 
 def get_existing_metric(connection_id: str, warehouse_id: int, table: dict, column_name: str, metric_name: str,
-                        group_by):
+                        group_by: List[str]):
     hook = get_hook(connection_id, 'GET')
     result = hook.run("api/v1/metrics?warehouseIds={warehouse_id}&tableIds={table_id}"
                       .format(warehouse_id=warehouse_id,

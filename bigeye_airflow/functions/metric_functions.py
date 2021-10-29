@@ -2,9 +2,11 @@ import datetime
 import logging
 from functools import reduce
 
+from bigeye_airflow.models.configurations import CreateMetricConfiguration
 
-def table_has_metric_time(table):
-    for field in table["fields"]:
+
+def table_has_metric_time(table: dict):
+    for field_key, field in table["fields"].items():
         if field["loadedDateField"]:
             return True
     return False
@@ -67,7 +69,7 @@ def get_notification_channels(notifications):
 
 
 def get_freshness_metric_name_for_field(table, column_name):
-    for f in table.get("fields"):
+    for fk, f in table["fields"].items():
         if f.get("fieldName").lower() == column_name.lower():
             if f.get("type") == "TIMESTAMP_LIKE":
                 return "HOURS_SINCE_MAX_TIMESTAMP"
@@ -129,7 +131,7 @@ def get_time_interval_for_delay_string(delay_at_update, metric_name, update_sche
     }
 
 
-def build_metric_object(warehouse_id, existing_metric, table, conf):  # TODO: what if existing metric doesnt exist
+def build_metric_object(warehouse_id: int, existing_metric: dict, table: dict, conf: CreateMetricConfiguration):  # TODO: what if existing metric doesnt exist
     metric_name = conf.metric_name
     ifm = is_freshness_metric(metric_name)
 
@@ -171,7 +173,7 @@ def build_metric_object(warehouse_id, existing_metric, table, conf):  # TODO: wh
     table_has_metric_time = False
 
     if not ifm:  # TODO: Look into repeated logic.
-        for field in table["fields"]:
+        for field_key, field in table["fields"].items():
             if field["loadedDateField"]:
                 table_has_metric_time = True
 

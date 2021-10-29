@@ -12,7 +12,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
-with DAG('covid_to_redshift',
+with DAG('test_create_metric_from_config_dag',
          start_date=datetime(2020, 8, 31, 0, 0, 0),
          max_active_runs=1,
          schedule_interval="@once",
@@ -22,15 +22,14 @@ with DAG('covid_to_redshift',
     create_metrics_from_config = CreateMetricOperator(
         task_id='create_metrics',
         connection_id='bigeye_connection',
-        warehouse_id=374,
+        warehouse_id=516,
         configuration=[
-            {"schema_name": "MACRO_ECON.CRUX_GENERAL",
-             "table_name": "CX13540--DOMESTIC_DEMAND_FORECAST--AQKkwVKlhBkHtUwu52HdmQl6Gw",
-             "column_name": "Value",
+            {"schema_name": "BIGEYE_DEMO.PUBLIC",
+             "table_name": "ORDERS_ECOMMERCE",
+             "column_name": "UNIT_PRICE",
              "metric_name": "MIN",
              "default_check_frequency_hours": 6,
              "filters": ["\"LOCATION_Code\" = 'LUX'", "\"SUBJECT_Code\" = 'TOT'"],
-             "group_by": ["Country"]
              }
         ],
         dag=dag
