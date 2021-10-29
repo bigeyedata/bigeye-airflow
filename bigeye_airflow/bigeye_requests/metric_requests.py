@@ -4,7 +4,7 @@ from typing import List
 from bigeye_airflow.functions.metric_functions import is_same_type_metric, is_same_column_metric
 import logging
 
-from bigeye_requests.http_hook import get_hook
+from bigeye_airflow.bigeye_requests.http_hook import get_hook
 
 
 def get_existing_metric(connection_id: str, warehouse_id: int, table: dict, column_name: str, metric_name: str,

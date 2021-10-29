@@ -11,24 +11,12 @@ from bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, 
 
 
 class CreateMetricOperator(BaseOperator):
-    # TODO: Ryan R. -- Think I solved some of this with the CreateMetricConfiguration class.  Will chat up Egor.
-    # Only for Python 3.8+
-    # TODO - find a way to check what Python version is running
-    # class FreshnessConfig(TypedDict, total=False):
-    #     schema_name: str
-    #     table_name: str
-    #     column_name: str
-    #     hours_between_update: int
-    #     hours_delay_at_update: int
-    #     notifications: List[str]
-    #     default_check_frequency_hours: int
 
     @apply_defaults
     def __init__(self,
                  connection_id: str,
                  warehouse_id: int,
-                 metric_configs: List[dict] = None,
-                 s3_configuration: str = None,
+                 configuration: List[dict],
                  *args,
                  **kwargs):
         """
@@ -44,19 +32,10 @@ class CreateMetricOperator(BaseOperator):
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
 
-        if metric_configs and s3_configuration:
-            raise Exception('Both configuration and configuration_s3_uri cannot have value.')
-        if metric_configs:
-            self.asset_ix = get_asset_ix(self.connection_id,
-                                         self.warehouse_id,
-                                         [CreateMetricConfiguration(**c) for c in
-                                          metric_configs]
-                                         )
-        if s3_configuration:
-            raise Exception('Lading configurations from S3 not yet available.')
-            # self.asset_ix = [{}]
-        else:
-            raise Exception('Either configuration or configuration_s3_uri must have value.')
+        self.configuration = [CreateMetricConfiguration(**c) for c in
+                              configuration]
+
+        self.asset_ix = {}  # Initializing asset_ix
 
     def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
         """
@@ -67,6 +46,11 @@ class CreateMetricOperator(BaseOperator):
         return self.asset_ix[schema_name.lower()][table_name.lower()]
 
     def execute(self, context):
+        self.asset_ix = get_asset_ix(self.connection_id,
+                                     self.warehouse_id,
+                                     self.configuration
+                                     )
+
         # Iterate each configuration
         for c in self.configuration:
 

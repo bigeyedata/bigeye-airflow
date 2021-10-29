@@ -23,7 +23,7 @@ with DAG('covid_to_redshift',
         task_id='create_metrics',
         connection_id='bigeye_connection',
         warehouse_id=374,
-        metric_configs=[
+        configuration=[
             {"schema_name": "MACRO_ECON.CRUX_GENERAL",
              "table_name": "CX13540--DOMESTIC_DEMAND_FORECAST--AQKkwVKlhBkHtUwu52HdmQl6Gw",
              "column_name": "Value",

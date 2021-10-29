@@ -42,10 +42,15 @@ def copy_and_overwrite(from_path: str, to_path: str):
     shutil.copytree(from_path, to_path)
 
 
-def run_subproc(cmd: str):
+def run_subproc(cmd: str, run_path: str = None):
     import subprocess
+
+    if run_path:
+        os.chdir(run_path)
     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
+    if run_path:
+        os.chdir(WK_DIR)
     if output:
         log.info(output)
     if error:
@@ -67,28 +72,32 @@ def restart():
 
 @app.command()
 def start():
-    log.info('Building wheel...')
-    build_wheel_cmd = 'python3 setup.py bdist_wheel'
-    run_subproc(build_wheel_cmd)
+    # log.info('Building wheel...')
+    # build_wheel_cmd = 'python3 setup.py bdist_wheel'
+    # run_subproc(build_wheel_cmd)
+    #
+    # log.info('Copying wheel to astro/include...')
+    # delete('astro/include/bigeye-airflow-*.whl')
+    # copy_and_overwrite(f'dist/bigeye_airflow-{version.__version__}-py3-none-any.whl', 'astro/include/')
 
-    log.info('Copying wheel to astro/include...')
-    copy_and_overwrite(f'dist/bigeye_airflow-{version.__version__}-py3-none-any.whl', 'astro/include/')
+    # log.info('Updating version in astor/requirements.txt')
+    # file_replace_all_lines_contains('astro/requirements.txt'
+    #                                 , 'include/bigeye_airflow-'
+    #                                 , 'include/bigeye_airflow-{version.__version__}-py3-none-any.whl')
 
-    log.info('Updating version in astor/requirements.txt')
-    file_replace_all_lines_contains('astro/requirements.txt'
-                                    , 'include/bigeye_airflow-'
-                                    , 'include/bigeye_airflow-{version.__version__}-py3-none-any.whl')
+    log.info('Copying solution')
+    copy_and_overwrite(f'bigeye_airflow/', 'astro/plugins/bigeye_airflow')
 
     log.info('Starting astro...')
-    start_cmd = 'cd astro; astro dev start;'
-    run_subproc(start_cmd)
+    start_cmd = 'astro dev start'
+    run_subproc(start_cmd, './astro')
 
 
 @app.command()
 def stop():
     log.info('Stopping astro...')
-    cmd = 'cd astro; astro dev stop;'
-    run_subproc(cmd)
+    cmd = 'astro dev stop'
+    run_subproc(cmd, './astro')
 
 
 if __name__ == '__main__':
