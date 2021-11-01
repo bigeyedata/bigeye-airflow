@@ -9,5 +9,6 @@ added, ***astro_dev***, to facilitate the needed copies into the astro environme
 bash astro_dev start
 bash astro_dev stop
 bash astro_dev restart
-```
+```  
 
+Testing in a DAG runtime can be achieved by altering the test dag: [test_create_metrics_from_config_dag.py](https://github.com/bigeyedata/bigeye-airflow/blob/main/astro/dags/test_create_metrics_from_config_dag.py)
