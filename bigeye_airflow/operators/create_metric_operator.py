@@ -77,7 +77,7 @@ class CreateMetricOperator(BaseOperator):
             if metric.get("id") is None and not is_freshness_metric(c.metric_name):
                 c.should_backfill = True
 
-            result = upsert_metric(metric)
+            result = upsert_metric(self.connection_id, metric)
 
             logging.info("Create result: %s", result.json())
             if c.should_backfill and result.json().get("id") is not None and table_has_metric_time(table):

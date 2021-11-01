@@ -24,12 +24,12 @@ with DAG('test_create_metric_from_config_dag',
         connection_id='bigeye_connection',
         warehouse_id=516,
         configuration=[
-            {"schema_name": "BIGEYE_DEMO.PUBLIC",
-             "table_name": "ORDERS_ECOMMERCE",
-             "column_name": "UNIT_PRICE",
-             "metric_name": "MIN",
+            {"schema_name": "BIGEYE_DEMO.DEMO",
+             "table_name": "PAYMENTS",
+             "column_name": "MERCHANT_CATEGORY",
+             "metric_name": "COUNT_DISTINCT",
              "default_check_frequency_hours": 6,
-             "filters": ["\"LOCATION_Code\" = 'LUX'", "\"SUBJECT_Code\" = 'TOT'"],
+             "group_by": ['MERCHANT_CATEGORY']
              }
         ],
         dag=dag
