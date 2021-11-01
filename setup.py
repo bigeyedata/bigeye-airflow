@@ -14,7 +14,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/torodata/toro-airflow",
-    packages=find_packages(exclude=("tests/**", "astro/**")),
+    packages=find_packages(exclude=['tests', 'astro']),
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -23,4 +23,3 @@ setup(
     ],
     python_requires='>=3.8',
 )
-
