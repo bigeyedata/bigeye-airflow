@@ -20,12 +20,12 @@ class CreateMetricOperator(BaseOperator):
                  *args,
                  **kwargs):
         """
-        :param connection_id: string containing basic auth TODO: research auth here.
+        :param connection_id: string containing basic auth
         :param warehouse_id: int id of the warehouse where the the operator will upsert the metrics.
         :param metric_configs: list of metric configurations to upsert
         :param s3_configuration: file containing list of metric configurations to upsert
-        :param args: not currently supported TODO: are we using?
-        :param kwargs: not currently supported TODO: are we using?
+        :param args: not currently supported
+        :param kwargs: not currently supported
         """
 
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
