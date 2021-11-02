@@ -15,7 +15,7 @@ bash astro_dev restart
     ![Admin Menu - Connections](docs/images/astronomer_connections_1.png "Admin Menu - Connections")  
 
 * Fill out the form for an HTTP connection using the appropriate Host, User and Pass. The current test Dags use 
-'bigeye_connection' as a connection_id.
+'bigeye_connection' as a connection_id for basic auth to the Bigeye API.
     ![Admin Menu - Connections](docs/images/astronomer_connections_2.png "Admin Menu - Connections") 
 
 ### Testing Metric Creation:  
