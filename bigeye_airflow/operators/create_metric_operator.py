@@ -11,6 +11,10 @@ from bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, 
 
 
 class CreateMetricOperator(BaseOperator):
+    """
+    The Create Metric Operator takes a list of CreateMetricConfiguration objects and instantiates them according to the
+    business logic of Bigeye's API.
+    """
 
     @apply_defaults
     def __init__(self,
@@ -20,10 +24,10 @@ class CreateMetricOperator(BaseOperator):
                  *args,
                  **kwargs):
         """
-        :param connection_id: string containing basic auth
+        :param connection_id: string referencing a defined connection in the Airflow deployment.
         :param warehouse_id: int id of the warehouse where the the operator will upsert the metrics.
-        :param metric_configs: list of metric configurations to upsert
-        :param s3_configuration: file containing list of metric configurations to upsert
+        :param configuration: list of metric configurations to upsert.  The dicts passed as a list must conform to the
+        dataclass CreateMetricConfiguration.
         :param args: not currently supported
         :param kwargs: not currently supported
         """
