@@ -84,4 +84,4 @@ class CreateMetricOperator(BaseOperator):
 
             logging.info("Create result: %s", result.json())
             if c.should_backfill and result.json().get("id") is not None and table_has_metric_time(table):
-                backfill_metric([result.json()["id"]])
+                backfill_metric(self.connection_id, [result.json()["id"]])
