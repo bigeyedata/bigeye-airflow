@@ -43,7 +43,10 @@ class CreateMetricOperator(BaseOperator):
         :param table_name: name of table
         :return: table entry as a dictionary
         """
-        return self.asset_ix[schema_name.lower()][table_name.lower()]
+        try:
+            return self.asset_ix[schema_name.lower()][table_name.lower()]
+        except KeyError as ex:
+            logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
 
     def execute(self, context):
         self.asset_ix = get_asset_ix(self.connection_id,
