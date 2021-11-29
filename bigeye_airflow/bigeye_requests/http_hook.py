@@ -1,4 +1,4 @@
-from airflow.hooks.http_hook import HttpHook
+from airflow.providers.http.hooks.http import HttpHook
 
 
 def get_hook(connection_id, method) -> HttpHook:

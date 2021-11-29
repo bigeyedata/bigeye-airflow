@@ -12,7 +12,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
-with DAG('test_create_metric_from_config_dag',
+with DAG('test_create_metric_dag',
          start_date=datetime(2020, 8, 31, 0, 0, 0),
          max_active_runs=1,
          schedule_interval="@once",
