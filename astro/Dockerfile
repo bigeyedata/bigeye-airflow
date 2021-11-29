@@ -1,1 +1,1 @@
-FROM quay.io/astronomer/ap-airflow:2.2.0-buster-onbuild
+FROM astronomerinc/ap-airflow:1.10.10-alpine3.10-onbuild-11038

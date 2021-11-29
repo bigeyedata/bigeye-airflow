@@ -5,6 +5,9 @@ Airflow operators to interact with Bigeye API.
 [Astronomer](astronomer.io) provides a local runtime for Airflow DAGs.  This runtime
 is build from the Dockerfile in the astro folder.  A startup bash script has been 
 added, ***astro_dev***, to facilitate the needed code copy into the astro environment.
+
+Test environment is currently compatible with Python 3.6 and Airflow 1.10.7.
+
 ```shell
 bash astro_dev start
 bash astro_dev stop
