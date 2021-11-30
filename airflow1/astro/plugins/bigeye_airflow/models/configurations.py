@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+
 def _get_seconds_from_window_size(window_size):
     if window_size == "1 day":
         return 86400

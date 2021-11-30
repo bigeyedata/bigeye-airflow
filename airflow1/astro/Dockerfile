@@ -1,1 +1,1 @@
-FROM astronomer/ap-airflow:1.10.10-buster-onbuild
+FROM astronomerinc/ap-airflow:1.10.10-buster-onbuild
