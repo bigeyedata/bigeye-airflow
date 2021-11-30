@@ -1,1 +1,0 @@
-FROM astronomerinc/ap-airflow:2.0.2-buster
