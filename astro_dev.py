@@ -7,8 +7,6 @@ import typer
 
 import logging as logging
 
-import version
-
 app = typer.Typer()
 
 USER = os.getlogin()
@@ -33,7 +31,7 @@ log.addHandler(ch)
 
 
 def get_compatability_path(version: str) -> str:
-    return f'airflow-{version}'
+    return f'airflow{version}'
 
 
 def delete(path: str):
@@ -70,7 +68,7 @@ def file_replace_all_lines_contains(file: str, search_exp: str, replace_exp: str
 
 @app.command()
 def restart(airflow_compatibility_version: str = typer.Option(
-        '1.10.10'
+        '1'
         , "--airflow_compatibility_version"
         , "-v"
         , help="Airflow Compatibility Version.")):
@@ -80,7 +78,7 @@ def restart(airflow_compatibility_version: str = typer.Option(
 
 @app.command()
 def start(airflow_compatibility_version: str = typer.Option(
-        '1.10.10'
+        '1'
         , "--airflow_compatibility_version"
         , "-v"
         , help="Airflow Compatibility Version.")):
@@ -97,7 +95,7 @@ def start(airflow_compatibility_version: str = typer.Option(
 
 @app.command()
 def stop(airflow_compatibility_version: str = typer.Option(
-        '1.10.10'
+        '1'
         , "--airflow_compatibility_version"
         , "-v"
         , help="Airflow Compatibility Version.")):
