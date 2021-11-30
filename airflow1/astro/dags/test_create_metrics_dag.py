@@ -19,8 +19,8 @@ with DAG('test_create_metric_dag',
          default_args=default_args,
          catchup=False
          ) as dag:
-    create_metrics_from_config = CreateMetricOperator(
-        task_id='create_metrics',
+    create_metrics_with_group_by = CreateMetricOperator(
+        task_id='create_metrics_with_group_by',
         connection_id='bigeye_connection',
         warehouse_id=516,
         configuration=[
@@ -30,6 +30,20 @@ with DAG('test_create_metric_dag',
              "metric_name": "COUNT_DISTINCT",
              "default_check_frequency_hours": 6,
              "group_by": ['MERCHANT_CATEGORY']
+             }
+        ],
+        dag=dag
+    )
+    create_metrics = CreateMetricOperator(
+        task_id='create_metrics',
+        connection_id='bigeye_connection',
+        warehouse_id=516,
+        configuration=[
+            {"schema_name": "BIGEYE_DEMO.DEMO",
+             "table_name": "PAYMENTS",
+             "column_name": "CHARGE_AMOUNT",
+             "metric_name": "MAX",
+             "default_check_frequency_hours": 6
              }
         ],
         dag=dag

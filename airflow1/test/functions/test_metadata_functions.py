@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from airflow1.bigeye_airflow.operators.create_metric_operator import case_sensitive_field_name
+from airflow1.bigeye_airflow.operators.create_metric_operator import get_case_sensitive_field_name
 
 sample_table_metadata = {
         "id": 1225460,
@@ -464,8 +464,8 @@ sample_table_metadata = {
 
 class TestMetadataFunctions(TestCase):
     def test_case_sensitive_field_name(self):
-        result = case_sensitive_field_name(table=sample_table_metadata, inbound_field_name='co_object_name')
+        result = get_case_sensitive_field_name(table=sample_table_metadata, inbound_field_name='co_object_name')
         self.assertEqual("co_object_Name", result)
 
-        result = case_sensitive_field_name(table=sample_table_metadata, inbound_field_name='Co_Code')
+        result = get_case_sensitive_field_name(table=sample_table_metadata, inbound_field_name='Co_Code')
         self.assertEqual("co_code", result)

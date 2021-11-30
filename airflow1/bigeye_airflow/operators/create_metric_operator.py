@@ -8,7 +8,7 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 
-def case_sensitive_field_name(table: dict, inbound_field_name: str) -> str:
+def get_case_sensitive_field_name(table: dict, inbound_field_name: str) -> str:
     for f in table['fields']:
         if f['fieldName'].lower() == inbound_field_name.lower():
             return f['fieldName']
@@ -42,6 +42,8 @@ class CreateMetricOperator(BaseOperator):
         self.configuration = configuration
 
     def execute(self, context):
+        logging.info(f'Running Task ID: {self.task_id}')
+
         for c in self.configuration:
             # Set attributes:
             table_name = c["table_name"]
@@ -60,21 +62,26 @@ class CreateMetricOperator(BaseOperator):
 
             table = self._get_table_for_name(schema_name, table_name)
 
-            if isinstance(c['group_by'], list):
-                group_by = [case_sensitive_field_name(table, c) for c in c['group_by']]
-            elif c['group_by'] is None:
-                group_by = []
-            else:
-                raise Exception(f'Configuration group_by element must be a list or None.\n'
-                                f'Value: {c["group_by"]}.\n'
-                                f'Type: {type(c["group_by"])}')
-
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", schema_name, table_name)
+
+            # this uglyness goes away by using a dataclass in airflow2.
+            if 'group_by' in c:
+                if isinstance(c['group_by'], list):
+                    group_by = [get_case_sensitive_field_name(table, c) for c in c['group_by']]
+                elif c['group_by'] is None:
+                    group_by = []
+                else:
+                    raise Exception(f'Configuration group_by element must be a list or None.\n'
+                                    f'Value: {c["group_by"]}.\n'
+                                    f'Type: {type(c["group_by"])}')
+            else:
+                group_by = []
+
             existing_metric = self._get_existing_metric(table, column_name, metric_name)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
-                                             metric_name)
+                                             metric_name, group_by)
             logging.info("Sending metric to create: %s", metric)
             bigeye_post_hook = self.get_hook('POST')
             result = bigeye_post_hook.run("api/v1/metrics",
