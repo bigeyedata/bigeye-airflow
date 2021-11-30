@@ -29,7 +29,7 @@ with DAG('test_create_metric_dag',
              "column_name": "MERCHANT_CATEGORY",
              "metric_name": "COUNT_DISTINCT",
              "default_check_frequency_hours": 6,
-             "group_by": ['MERCHANT_CATEGORY']
+             "group_by": ['MERCHANt_CATEGORY']
              }
         ],
         dag=dag
