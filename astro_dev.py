@@ -7,8 +7,6 @@ import typer
 
 import logging as logging
 
-import version
-
 app = typer.Typer()
 
 USER = os.getlogin()
@@ -30,6 +28,10 @@ ch.setFormatter(formatter)
 
 # add ch to logger
 log.addHandler(ch)
+
+
+def get_compatability_path(version: str) -> str:
+    return f'airflow{version}'
 
 
 def delete(path: str):
@@ -65,39 +67,41 @@ def file_replace_all_lines_contains(file: str, search_exp: str, replace_exp: str
 
 
 @app.command()
-def restart():
-    stop()
-    start()
+def restart(airflow_compatibility_version: str = typer.Option(
+        '1'
+        , "--airflow_compatibility_version"
+        , "-v"
+        , help="Airflow Compatibility Version.")):
+    stop(airflow_compatibility_version)
+    start(airflow_compatibility_version)
 
 
 @app.command()
-def start():
-    # log.info('Building wheel...')
-    # build_wheel_cmd = 'python3 setup.py bdist_wheel'
-    # run_subproc(build_wheel_cmd)
-    #
-    # log.info('Copying wheel to astro/include...')
-    # delete('astro/include/bigeye-airflow-*.whl')
-    # copy_and_overwrite(f'dist/bigeye_airflow-{version.__version__}-py3-none-any.whl', 'astro/include/')
-
-    # log.info('Updating version in astor/requirements.txt')
-    # file_replace_all_lines_contains('astro/requirements.txt'
-    #                                 , 'include/bigeye_airflow-'
-    #                                 , 'include/bigeye_airflow-{version.__version__}-py3-none-any.whl')
+def start(airflow_compatibility_version: str = typer.Option(
+        '1'
+        , "--airflow_compatibility_version"
+        , "-v"
+        , help="Airflow Compatibility Version.")):
 
     log.info('Copying solution')
-    copy_and_overwrite(f'bigeye_airflow/', 'astro/plugins/bigeye_airflow')
+    copy_and_overwrite(
+        f'{get_compatability_path(airflow_compatibility_version)}/bigeye_airflow/',
+        f'{get_compatability_path(airflow_compatibility_version)}/astro/plugins/bigeye_airflow')
 
     log.info('Starting astro...')
     start_cmd = 'astro dev start'
-    run_subproc(start_cmd, './astro')
+    run_subproc(start_cmd, f'./{get_compatability_path(airflow_compatibility_version)}/astro')
 
 
 @app.command()
-def stop():
+def stop(airflow_compatibility_version: str = typer.Option(
+        '1'
+        , "--airflow_compatibility_version"
+        , "-v"
+        , help="Airflow Compatibility Version.")):
     log.info('Stopping astro...')
     cmd = 'astro dev stop'
-    run_subproc(cmd, './astro')
+    run_subproc(cmd, f'./{get_compatability_path(airflow_compatibility_version)}/astro')
 
 
 if __name__ == '__main__':

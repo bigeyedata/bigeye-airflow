@@ -9,9 +9,9 @@ added, ***astro_dev***, to facilitate the needed code copy into the astro enviro
 Test environment is currently compatible with Python 3.6 and Airflow 1.10.7.
 
 ```shell
-bash astro_dev start
-bash astro_dev stop
-bash astro_dev restart
+bash astro_dev start <-v 1>
+bash astro_dev stop <-v 1>
+bash astro_dev restart <-v 1>
 ```  
 ### Credentials Setup
 * Go to the Admin menu and choose Connections:
@@ -23,5 +23,4 @@ bash astro_dev restart
 
 ### Testing Metric Creation:  
 Testing in a DAG runtime can be achieved by altering the test dag: 
-[test_create_metrics_from_config_dag.py](https://github.com/bigeyedata/bigeye-airflow/blob/main/astro/dags/test_create_metrics_from_config_dag.py)
-
+[test_create_metrics_dag.py](https://github.com/bigeyedata/bigeye-airflow/blob/main/astro/dags/test_create_metrics_dag.py)

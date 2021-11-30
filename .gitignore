@@ -132,4 +132,4 @@ dmypy.json
 .idea
 
 # bigeye plugins for astro (dupe code copied by astro start script)
-astro/plugins/bigeye_airflow
+**/astro/plugins/bigeye_airflow
