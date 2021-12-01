@@ -14,6 +14,26 @@ def get_case_sensitive_field_name(table: dict, inbound_field_name: str) -> str:
             return f['fieldName']
 
 
+def get_not_metric_time_enabled_statistics():
+    # To support a list from API
+    return [
+        'HOURS_SINCE_MAX_TIMESTAMP'.lower(),
+        'HOURS_SINCE_MAX_DATE'.lower(),
+        'PERCENT_DATE_NOT_IN_FUTURE'.lower(),
+        'PERCENT_NOT_IN_FUTURE'.lower(),
+        'COUNT_DATE_NOT_IN_FUTURE'.lower()
+    ]
+
+
+def enforce_lookback_type_defaults(metric_name: str, lookback_type: str) -> str:
+    if metric_name.lower() in get_not_metric_time_enabled_statistics():
+        return 'DATE_TIME_LOOKBACK'
+    elif lookback_type is None:
+        return "METRIC_TIME_LOOKBACK_TYPE"
+    else:
+        return lookback_type
+
+
 class CreateMetricOperator(BaseOperator):
 
     # Only for Python 3.8+
@@ -32,7 +52,7 @@ class CreateMetricOperator(BaseOperator):
                  connection_id: str,
                  warehouse_id: int,
                  configuration: list(dict(schema_name=None, table_name=None, column_name=None,
-                                          update_schedule=None, metric_name=None, group_by=None,
+                                          update_schedule=None, metric_name=None,
                                           extras=...)),
                  *args,
                  **kwargs):
@@ -42,10 +62,7 @@ class CreateMetricOperator(BaseOperator):
         self.configuration = configuration
 
     def execute(self, context):
-        logging.info(f'Running Task ID: {self.task_id}')
-
         for c in self.configuration:
-            # Set attributes:
             table_name = c["table_name"]
             schema_name = c["schema_name"]
             column_name = c["column_name"]
@@ -56,12 +73,18 @@ class CreateMetricOperator(BaseOperator):
             notifications = c.get("notifications", [])
             metric_name = c.get("metric_name")
             should_backfill = c.get("should_backfill", False)
+            lookback_type = enforce_lookback_type_defaults(metric_name=metric_name,
+                                                           lookback_type=c.get("lookback_type", None))
+            lookback_days = c.get("lookback_days", 2)
+            window_size_seconds = self._get_seconds_from_window_size(c.get("window_size", "1 day"))
+            thresholds = c.get("thresholds", [])
+            filters = c.get("filters", [])
 
             if metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
+            # Getting Table
             table = self._get_table_for_name(schema_name, table_name)
-
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", schema_name, table_name)
 
@@ -78,29 +101,48 @@ class CreateMetricOperator(BaseOperator):
             else:
                 group_by = []
 
-            existing_metric = self._get_existing_metric(table, column_name, metric_name)
+            # Getting Existing Metric
+            existing_metric = self._get_existing_metric(table, column_name, metric_name, group_by)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
-                                             metric_name, group_by)
+                                             metric_name, lookback_type, lookback_days, window_size_seconds, thresholds,
+                                             filters, group_by)
             logging.info("Sending metric to create: %s", metric)
+            if metric.get("id") is None and not self._is_freshness_metric(metric_name):
+                should_backfill = True
             bigeye_post_hook = self.get_hook('POST')
             result = bigeye_post_hook.run("api/v1/metrics",
                                           headers={"Content-Type": "application/json", "Accept": "application/json"},
                                           data=json.dumps(metric))
             logging.info("Create metric status: %s", result.status_code)
             logging.info("Create result: %s", result.json())
-            if should_backfill and result.json().get("id") is not None:
-                bigeye_post_hook.run("/api/v1/metrics/backfill",
+            if should_backfill and result.json().get("id") is not None and self._table_has_metric_time(table):
+                bigeye_post_hook.run("api/v1/metrics/backfill",
                                      headers={"Content-Type": "application/json", "Accept": "application/json"},
                                      data=json.dumps({"metricIds": [result.json()["id"]]}))
+
+    def _table_has_metric_time(self, table):
+        for field in table["fields"]:
+            if field["loadedDateField"]:
+                return True
+        return False
+
+    def _get_seconds_from_window_size(self, window_size):
+        if window_size == "1 day":
+            return 86400
+        elif window_size == "1 hour":
+            return 3600
+        else:
+            raise Exception("Can only set window size of '1 hour' or '1 day'")
 
     def get_hook(self, method) -> HttpHook:
         return HttpHook(http_conn_id=self.connection_id, method=method)
 
-    def _get_metric_object(self, existing_metric, table, notifications, column_name,
-                           update_schedule, delay_at_update, timezone, default_check_frequency_hours, metric_name,
-                           group_by=[]):
-        if self._is_freshness_metric(metric_name):
+    def _get_metric_object(self, existing_metric, table, notifications, column_name, update_schedule, delay_at_update,
+                           timezone, default_check_frequency_hours, metric_name, lookback_type, lookback_days,
+                           window_size_seconds, thresholds, filters, group_by):
+        is_freshness_metric = self._is_freshness_metric(metric_name)
+        if is_freshness_metric:
             metric_name = self._get_freshness_metric_name_for_field(table, column_name)
             if update_schedule is None:
                 raise Exception("Update schedule can not be null for freshness schedule thresholds")
@@ -109,7 +151,8 @@ class CreateMetricOperator(BaseOperator):
                 "intervalType": "HOURS_TIME_INTERVAL_TYPE",
                 "intervalValue": default_check_frequency_hours
             },
-            "thresholds": self._get_thresholds_for_metric(metric_name, timezone, delay_at_update, update_schedule),
+            "thresholds": self._get_thresholds_for_metric(metric_name, timezone, delay_at_update, update_schedule,
+                                                          thresholds),
             "warehouseId": self.warehouse_id,
             "datasetId": table.get("id"),
             "metricType": {
@@ -125,26 +168,39 @@ class CreateMetricOperator(BaseOperator):
             ],
             "lookback": {
                 "intervalType": "DAYS_TIME_INTERVAL_TYPE",
-                "intervalValue": 1
+                "intervalValue": lookback_days
             },
-            # 24 hour window mexis metric
-            "lookbackType": "METRIC_TIME_LOOKBACK_TYPE",
-            "grainSeconds": 86400,
             "notificationChannels": self._get_notification_channels(notifications),
+            "filters": filters,
             "groupBys": group_by,
         }
+        table_has_metric_time = False
+        if not is_freshness_metric:
+            for field in table["fields"]:
+                if field["loadedDateField"]:
+                    table_has_metric_time = True
+        if table_has_metric_time:
+            metric["lookbackType"] = lookback_type
+            if lookback_type == "METRIC_TIME_LOOKBACK_TYPE":
+                metric["grainSeconds"] = window_size_seconds
         if existing_metric is None:
             return metric
         else:
             existing_metric["thresholds"] = metric["thresholds"]
             existing_metric["notificationChannels"] = metric.get("notificationChannels", [])
             existing_metric["scheduleFrequency"] = metric["scheduleFrequency"]
+            if not is_freshness_metric and table_has_metric_time:
+                existing_metric["lookbackType"] = metric["lookbackType"]
+                existing_metric["lookback"] = metric["lookback"]
+                existing_metric["grainSeconds"] = metric["grainSeconds"]
             return existing_metric
 
     def _is_freshness_metric(self, metric_name):
         return "HOURS_SINCE_MAX" in metric_name
 
-    def _get_thresholds_for_metric(self, metric_name, timezone, delay_at_update, update_schedule):
+    def _get_thresholds_for_metric(self, metric_name, timezone, delay_at_update, update_schedule, thresholds):
+        if thresholds:
+            return thresholds
         # Current path for freshness
         if self._is_freshness_metric(metric_name):
             return [{
@@ -168,7 +224,7 @@ class CreateMetricOperator(BaseOperator):
                                "modelType": "UNDEFINED_THRESHOLD_MODEL_TYPE"}}
         ]
 
-    def _get_existing_metric(self, table, column_name, metric_name):
+    def _get_existing_metric(self, table, column_name, metric_name, group_by):
         hook = self.get_hook('GET')
         result = hook.run("api/v1/metrics?warehouseIds={warehouse_id}&tableIds={table_id}"
                           .format(warehouse_id=self.warehouse_id,
@@ -176,17 +232,21 @@ class CreateMetricOperator(BaseOperator):
                           headers={"Accept": "application/json"})
         metrics = result.json()
         for m in metrics:
-            if self._is_same_type_metric(m, metric_name) and self._is_same_column_metric(m, column_name):
+            if self._is_same_type_metric(m, metric_name, group_by) and self._is_same_column_metric(m, column_name):
                 return m
         return None
 
     def _is_same_column_metric(self, m, column_name):
         return m["parameters"][0].get("columnName").lower() == column_name.lower()
 
-    def _is_same_type_metric(self, metric, metric_name):
+    def _is_same_type_metric(self, metric, metric_name, group_by):
         keys = ["metricType", "predefinedMetric", "metricName"]
         result = reduce(lambda val, key: val.get(key) if val else None, keys, metric)
-        return result is not None and result == metric_name
+        if result is None:
+            return False
+        both_metrics_freshness = self._is_freshness_metric(result) and self._is_freshness_metric(metric_name)
+        same_group_by = metric.get('groupBys', []) == group_by
+        return result is not None and (result == metric_name or both_metrics_freshness) and same_group_by
 
     def _get_table_for_name(self, schema_name, table_name):
         hook = self.get_hook('GET')
@@ -230,9 +290,9 @@ class CreateMetricOperator(BaseOperator):
             elif interval_type == "WEEKDAYS_TIME_INTERVAL_TYPE":
                 lookback_weekdays = interval_value + 1 if datetime.datetime.now().hour <= hours_from_cron \
                     else interval_value
-                logging.info("Weekdays to look back ", lookback_weekdays)
+                logging.info("Weekdays to look back {}".format(lookback_weekdays))
                 days_since_last_business_day = self._get_days_since_n_weekdays(datetime.date.today(), lookback_weekdays)
-                logging.info("total days to use for delay ", days_since_last_business_day)
+                logging.info("total days to use for delay {}".format(days_since_last_business_day))
                 interval_type = "HOURS_TIME_INTERVAL_TYPE"
                 interval_value = (days_since_last_business_day + lookback_weekdays) * 24 + hours_from_cron
             else:
