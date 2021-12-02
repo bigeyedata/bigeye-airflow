@@ -102,7 +102,7 @@ class CreateMetricOperator(BaseOperator):
                 group_by = []
 
             # Getting Existing Metric
-            existing_metric = self._get_existing_metric(table, column_name, metric_name, group_by)
+            existing_metric = self._get_existing_metric(table, column_name, metric_name, group_by, filters)
             metric = self._get_metric_object(existing_metric, table, notifications, column_name,
                                              update_schedule, delay_at_update, timezone, default_check_frequency_hours,
                                              metric_name, lookback_type, lookback_days, window_size_seconds, thresholds,
@@ -192,7 +192,8 @@ class CreateMetricOperator(BaseOperator):
             if not is_freshness_metric and table_has_metric_time:
                 existing_metric["lookbackType"] = metric["lookbackType"]
                 existing_metric["lookback"] = metric["lookback"]
-                existing_metric["grainSeconds"] = metric["grainSeconds"]
+                if lookback_type == "METRIC_TIME_LOOKBACK_TYPE":
+                    existing_metric["grainSeconds"] = metric["grainSeconds"]
             return existing_metric
 
     def _is_freshness_metric(self, metric_name):
@@ -224,7 +225,7 @@ class CreateMetricOperator(BaseOperator):
                                "modelType": "UNDEFINED_THRESHOLD_MODEL_TYPE"}}
         ]
 
-    def _get_existing_metric(self, table, column_name, metric_name, group_by):
+    def _get_existing_metric(self, table, column_name, metric_name, group_by, filters):
         hook = self.get_hook('GET')
         result = hook.run("api/v1/metrics?warehouseIds={warehouse_id}&tableIds={table_id}"
                           .format(warehouse_id=self.warehouse_id,
@@ -232,21 +233,24 @@ class CreateMetricOperator(BaseOperator):
                           headers={"Accept": "application/json"})
         metrics = result.json()
         for m in metrics:
-            if self._is_same_type_metric(m, metric_name, group_by) and self._is_same_column_metric(m, column_name):
+            if self._is_same_type_metric(m, metric_name, group_by, filters) \
+                    and self._is_same_column_metric(m, column_name):
                 return m
         return None
 
     def _is_same_column_metric(self, m, column_name):
         return m["parameters"][0].get("columnName").lower() == column_name.lower()
 
-    def _is_same_type_metric(self, metric, metric_name, group_by):
+    def _is_same_type_metric(self, metric, metric_name, group_by, filters):
         keys = ["metricType", "predefinedMetric", "metricName"]
         result = reduce(lambda val, key: val.get(key) if val else None, keys, metric)
         if result is None:
             return False
         both_metrics_freshness = self._is_freshness_metric(result) and self._is_freshness_metric(metric_name)
         same_group_by = metric.get('groupBys', []) == group_by
-        return result is not None and (result == metric_name or both_metrics_freshness) and same_group_by
+        same_filters = metric.get('filters', []) == filters
+        return result is not None and (result == metric_name or both_metrics_freshness) \
+               and same_group_by and same_filters
 
     def _get_table_for_name(self, schema_name, table_name):
         hook = self.get_hook('GET')
