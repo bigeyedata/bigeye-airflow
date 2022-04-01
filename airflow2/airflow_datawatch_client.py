@@ -1,11 +1,9 @@
 import logging
 from typing import List
 
-
-from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 from bigeye_sdk.datawatch_client import DatawatchClient, Method
 from bigeye_airflow.bigeye_requests.http_hook import get_hook
-from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
+
 
 headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
@@ -30,14 +28,7 @@ class AirflowDatawatchClient(DatawatchClient):
         if response.status_code != 204:
             return response.json()
 
-    def get_asset_ix(connection_id: str, warehouse_id: int, conf: List[CreateMetricConfiguration]) -> dict:
-        """
-        Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
-        :param connection_id: name of connection in airflow with bigeye login info
-        :param warehouse_id: int id of Bigeye warehouse
-        :param conf: the CreateMetricConfiguration object
-        :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
-        """
+    def get_tables_for_schema(self, warehouse_id: int, schema_name: str) -> List[dict]:
 
         url = f"dataset/tables/{warehouse_id}/{schema_name}"
-
+        return self._call_datawatch(Method.GET, url)
