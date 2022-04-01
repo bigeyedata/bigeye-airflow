@@ -1,13 +1,16 @@
 import logging
+from airflow.models import BaseOperator
 from typing import List
 
-from airflow.models import BaseOperator
+from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 
+from airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from airflow2.bigeye_airflow.bigeye_requests.catalog_requests import get_asset_ix
+from airflow2.bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
 from airflow2.bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, \
     table_has_metric_time
 from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
-from airflow2.bigeye_airflow.bigeye_requests.catalog_requests import get_asset_ix
-from airflow2.bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
+from bigeye_sdk.functions.core_py_functs import chain_lists
 
 
 class CreateMetricOperator(BaseOperator):
@@ -39,6 +42,7 @@ class CreateMetricOperator(BaseOperator):
                               configuration]
 
         self.asset_ix = {}  # Initializing asset_ix
+        self.client = AirflowDatawatchClient(connection_id)
 
     def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
         """
@@ -52,10 +56,7 @@ class CreateMetricOperator(BaseOperator):
             logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
 
     def execute(self, context):
-        self.asset_ix = get_asset_ix(self.connection_id,
-                                     self.warehouse_id,
-                                     self.configuration
-                                     )
+        self.asset_ix = self._get_asset_ix(self.warehouse_id, self.configuration)
 
         # Iterate each configuration
         for c in self.configuration:
@@ -89,3 +90,16 @@ class CreateMetricOperator(BaseOperator):
             logging.info("Create result: %s", result.json())
             if c.should_backfill and result.json().get("id") is not None and table_has_metric_time(table):
                 backfill_metric(self.connection_id, [result.json()["id"]])
+
+    def _get_asset_ix(self, warehouse_id: int, conf: List[CreateMetricConfiguration]) -> dict:
+        """
+        Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
+        :param warehouse_id: int id of Bigeye warehouse
+        :param conf: the CreateMetricConfiguration object
+        :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
+        """
+
+        tables: List[dict] = chain_lists([self.client.get_tables_for_schema(warehouse_id, schema_name) for schema_name
+                                          in [c.schema_name for c in conf]])
+
+        return {tables["schemaName"].lower(): transform_table_list_to_dict(tables)}
