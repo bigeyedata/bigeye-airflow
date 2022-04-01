@@ -1,10 +1,9 @@
 import json
+import logging
 from typing import List
 
-from airflow2.bigeye_airflow.functions.metric_functions import is_same_type_metric, is_same_column_metric
-import logging
-
 from airflow2.bigeye_airflow.bigeye_requests.http_hook import get_hook
+from airflow2.bigeye_airflow.functions.metric_functions import is_same_type_metric, is_same_column_metric
 
 
 def get_existing_metric(connection_id: str, warehouse_id: int, table: dict, column_name: str, metric_name: str,
