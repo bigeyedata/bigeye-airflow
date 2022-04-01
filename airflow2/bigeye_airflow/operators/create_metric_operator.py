@@ -2,9 +2,9 @@ import logging
 from typing import List
 
 from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 
-from airflow2.bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, table_has_metric_time
+from airflow2.bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, \
+    table_has_metric_time
 from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
 from airflow2.bigeye_airflow.bigeye_requests.catalog_requests import get_asset_ix
 from airflow2.bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
@@ -16,7 +16,6 @@ class CreateMetricOperator(BaseOperator):
     business logic of Bigeye's API.
     """
 
-    @apply_defaults
     def __init__(self,
                  connection_id: str,
                  warehouse_id: int,
@@ -74,7 +73,8 @@ class CreateMetricOperator(BaseOperator):
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
-            existing_metric = get_existing_metric(self.connection_id, self.warehouse_id, table, c.column_name, c.metric_name, c.group_by)
+            existing_metric = get_existing_metric(self.connection_id, self.warehouse_id, table, c.column_name,
+                                                  c.metric_name, c.group_by)
 
             metric = build_metric_object(warehouse_id=self.warehouse_id
                                          , existing_metric=existing_metric
