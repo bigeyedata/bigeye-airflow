@@ -2,12 +2,10 @@ import logging
 
 from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 
 
 class RunMetricsOperator(BaseOperator):
 
-    @apply_defaults
     def __init__(self,
                  connection_id,
                  warehouse_id,
