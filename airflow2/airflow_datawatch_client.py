@@ -1,9 +1,8 @@
 import logging
-from typing import List
 
 from bigeye_sdk.datawatch_client import DatawatchClient, Method
-from bigeye_airflow.bigeye_requests.http_hook import get_hook
 
+from bigeye_airflow.bigeye_requests.http_hook import get_hook
 
 headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
