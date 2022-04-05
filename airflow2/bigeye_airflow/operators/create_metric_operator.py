@@ -1,20 +1,18 @@
 import logging
-from airflow.models import BaseOperator
-from typing import List
+from typing import List, Dict
 
+from airflow.models import BaseOperator
+from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
+from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleCreateMetricRequest
 
 from airflow2.airflow_datawatch_client import AirflowDatawatchClient
-from airflow2.bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
-from airflow2.bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, \
-    table_has_metric_time
 from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
-from bigeye_sdk.functions.core_py_functs import chain_lists
 
 
 class CreateMetricOperator(BaseOperator):
     """
-    The Create Metric Operator takes a list of CreateMetricConfiguration objects and instantiates them according to the
+    The CreateMetricOperator takes a list of CreateMetricConfiguration objects and instantiates them according to the
     business logic of Bigeye's API.
     """
 
@@ -25,12 +23,12 @@ class CreateMetricOperator(BaseOperator):
                  *args,
                  **kwargs):
         """
-        :param connection_id: string referencing a defined connection in the Airflow deployment.
-        :param warehouse_id: int id of the warehouse where the the operator will upsert the metrics.
-        :param configuration: list of metric configurations to upsert.  The dicts passed as a list must conform to the
-        dataclass CreateMetricConfiguration.
-        :param args: not currently supported
-        :param kwargs: not currently supported
+        param connection_id: string referencing a defined connection in the Airflow deployment.
+        param warehouse_id: int id of the warehouse where the operator will upsert the metrics.
+        param configuration: list of metric configurations to upsert.  The dicts passed as a list must conform to the
+        dataclass SimpleMetricTemplate.
+        param args: not currently supported
+        param kwargs: not currently supported
         """
 
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
@@ -39,6 +37,13 @@ class CreateMetricOperator(BaseOperator):
 
         self.configuration = [CreateMetricConfiguration(**c) for c in
                               configuration]
+        self.simple_configuration = [SimpleCreateMetricRequest(c["schema_name"],
+                                                               c["table_name"],
+                                                               c["column_name"],
+                                                               SimpleMetricTemplate(metric_name=c["metric_name"],
+                                                                                    metric_type=c["metric_type"]),
+                                                               c["existing_metric"])
+                                     for c in configuration]
 
         self.asset_ix = {}  # Initializing asset_ix
         self.client = AirflowDatawatchClient(connection_id)
@@ -55,12 +60,12 @@ class CreateMetricOperator(BaseOperator):
             logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
 
     def execute(self, context):
-        self.asset_ix = self._get_asset_ix(self.warehouse_id, self.configuration)
+        self.asset_ix = self._build_asset_ix(self.warehouse_id, self.simple_configuration)
 
         # Iterate each configuration
-        for c in self.configuration:
+        for c in self.simple_configuration:
 
-            if c.metric_name is None:
+            if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
             table: dict = self._get_table_entry_for_name(c.schema_name, c.table_name)
@@ -68,37 +73,40 @@ class CreateMetricOperator(BaseOperator):
             logging.info(table)
 
             # Validate and replace group column names -- to ameliorate incorrect case.
-            c.group_by = [table['fields'][col.lower()]['fieldName'] for col in c.group_by]
+            c.group_by = [table['fields'][col.lower()]['fieldName'] for col in c.metric_template.group_by]
 
             if table is None or table.get("id") is None:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
-            existing_metric = get_existing_metric(self.connection_id, self.warehouse_id, table, c.column_name,
-                                                  c.metric_name, c.group_by)
+            c.existing_metric = self.client.get_existing_metric(self.warehouse_id,
+                                                                table,
+                                                                c.column_name,
+                                                                c.metric_template.metric_name,
+                                                                c.group_by,
+                                                                c.metric_template.filters)
 
-            metric = build_metric_object(warehouse_id=self.warehouse_id
-                                         , existing_metric=existing_metric
-                                         , table=table
-                                         , conf=c)
+            metric = c.build_upsert_request_object(warehouse_id=self.warehouse_id, table=table)
 
-            if metric.get("id") is None and not is_freshness_metric(c.metric_name):
+            if metric.get("id") is None and not is_freshness_metric(c.metric_template.metric_name):
                 c.should_backfill = True
 
-            result = upsert_metric(self.connection_id, metric)
+            result = self.client.create_metric(metric_configuration=metric)
 
-            logging.info("Create result: %s", result.json())
-            if c.should_backfill and result.json().get("id") is not None and table_has_metric_time(table):
-                backfill_metric(self.connection_id, [result.json()["id"]])
+            logging.info("Create result: %s", result.to_json())
+            if c.should_backfill and result.id is not None and table_has_metric_time(table):
+                self.client.backfill_metric(metric_ids=[result.id])
 
-    def _get_asset_ix(self, warehouse_id: int, conf: List[CreateMetricConfiguration]) -> dict:
+    def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleCreateMetricRequest]) -> dict:
         """
         Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
         :param warehouse_id: int id of Bigeye warehouse
         :param conf: the CreateMetricConfiguration object
         :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
         """
+        return {sn.lower(): self.__get_asset_ix(warehouse_id, sn)
+                for sn in {c.schema_name for c in conf}}
 
-        tables: List[dict] = chain_lists([self.client.get_dataset(warehouse_id, schema_name) for schema_name
-                                          in [c.schema_name for c in conf]])
-
-        return {tables["schemaName"].lower(): transform_table_list_to_dict(tables)}
+    def __get_asset_ix(self, warehouse_id: int, schema_name: str) -> Dict[str, dict]:
+        return transform_table_list_to_dict(
+            self.client.get_dataset(warehouse_id, schema_name)
+        )
