@@ -28,7 +28,3 @@ class AirflowDatawatchClient(DatawatchClient):
         if response.status_code != 204:
             return response.json()
 
-    def get_tables_for_schema(self, warehouse_id: int, schema_name: str) -> List[dict]:
-
-        url = f"dataset/tables/{warehouse_id}/{schema_name}"
-        return self._call_datawatch(Method.GET, url)
