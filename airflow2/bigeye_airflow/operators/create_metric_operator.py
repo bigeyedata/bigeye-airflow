@@ -5,7 +5,6 @@ from typing import List
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 
 from airflow2.airflow_datawatch_client import AirflowDatawatchClient
-from airflow2.bigeye_airflow.bigeye_requests.catalog_requests import get_asset_ix
 from airflow2.bigeye_airflow.bigeye_requests.metric_requests import get_existing_metric, upsert_metric, backfill_metric
 from airflow2.bigeye_airflow.functions.metric_functions import build_metric_object, is_freshness_metric, \
     table_has_metric_time
@@ -99,7 +98,7 @@ class CreateMetricOperator(BaseOperator):
         :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
         """
 
-        tables: List[dict] = chain_lists([self.client.get_tables_for_schema(warehouse_id, schema_name) for schema_name
+        tables: List[dict] = chain_lists([self.client.get_dataset(warehouse_id, schema_name) for schema_name
                                           in [c.schema_name for c in conf]])
 
         return {tables["schemaName"].lower(): transform_table_list_to_dict(tables)}
