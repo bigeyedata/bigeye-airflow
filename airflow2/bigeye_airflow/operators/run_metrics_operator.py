@@ -1,9 +1,8 @@
 import logging
 from typing import List
 
-from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
-from bigeye_sdk.generated.com.torodata.models.generated import Table, BatchGetMetricResponse, MetricConfiguration, \
+from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
 from airflow2.airflow_datawatch_client import AirflowDatawatchClient
@@ -47,6 +46,8 @@ class RunMetricsOperator(BaseOperator):
         # if num_failing_metrics > 0:
         #     error_message = "There are {num_failing} failing metrics; see logs for more details"
         #     raise ValueError(error_message.format(num_failing=num_failing_metrics))
+
+        return success_and_failures
 
     def _get_table_for_name(self, schema_name, table_name) -> Table:
         tables = self.client.get_tables(warehouse_id=self.warehouse_id,
