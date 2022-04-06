@@ -1,7 +1,12 @@
 import logging
+from typing import List
 
 from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
+from bigeye_sdk.generated.com.torodata.models.generated import Table, BatchGetMetricResponse, MetricConfiguration, \
+    MetricInfo, MetricRunStatus
+
+from airflow2.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class RunMetricsOperator(BaseOperator):
@@ -20,47 +25,46 @@ class RunMetricsOperator(BaseOperator):
         self.schema_name = schema_name
         self.table_name = table_name
         self.metric_ids = metric_ids
+        self.client = AirflowDatawatchClient(connection_id)
 
     def execute(self, context):
-        metric_ids_to_run = []
-        hook = self.get_hook('GET')
+
+        metric_ids_to_run = self._set_metric_ids_to_run()
+
+        num_failing_metrics = 0
+        success_and_failures = {}
+        logging.debug("Running metric IDs: %s", metric_ids_to_run)
+        metric_infos: List[MetricInfo] = self.client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
+        for mi in metric_infos:
+            if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:
+                logging.error(f"Metric is not OK: {mi.metric_configuration.name}")
+                logging.error(f"Metric result: {mi.metric_configuration}")
+                success_and_failures["failure"] = mi
+                num_failing_metrics += 1
+            else:
+                success_and_failures["success"] = mi
+        # TODO: We shouldn't kill the pipeline because of errors. The user should be able to handle how they choose.
+        # if num_failing_metrics > 0:
+        #     error_message = "There are {num_failing} failing metrics; see logs for more details"
+        #     raise ValueError(error_message.format(num_failing=num_failing_metrics))
+
+    def _get_table_for_name(self, schema_name, table_name) -> Table:
+        tables = self.client.get_tables(warehouse_id=self.warehouse_id,
+                                        schemas=[schema_name],
+                                        table_name=[table_name]).tables
+
+        if not tables:
+            raise Exception(f"Could not find table: {self.table_name} in {self.schema_name}")
+        else:
+            return tables.pop()
+
+    def _set_metric_ids_to_run(self) -> List[int]:
         if self.metric_ids is None:
             table = self._get_table_for_name(self.schema_name, self.table_name)
-            if table is None or table.get("id") is None:
-                raise Exception("Could not find table: ", self.schema_name, self.table_name)
-            table_id = table.get("id")
-            result = hook.run("api/v1/metrics?warehouseIds={warehouse_id}&tableIds={table_id}"
-                              .format(warehouse_id=self.warehouse_id,
-                                      table_id=table_id),
-                              headers={"Accept": "application/json"})
-            metrics = result.json()
-            metric_ids_to_run = [m['id'] for m in metrics]
+            metrics: List[MetricConfiguration] = self.client.search_metric_configuration(
+                warehouse_ids=[table.warehouse_id],
+                table_ids=[table.id]).metrics
+
+            return [m.id for m in metrics]
         else:
-            metric_ids_to_run = self.metric_ids
-        num_failing_metrics = 0
-        for m in metric_ids_to_run:
-            logging.debug("Running metric: %s", m)
-            metric_result = hook.run("statistics/runOne/{id}".format(id=m)).json()
-            for mr in metric_result:
-                if not mr['statusOk']:
-                    logging.error("Metric is not OK: %s", m)
-                    logging.error("Metric result: %s", mr)
-                    num_failing_metrics += 1
-        if num_failing_metrics > 0:
-            error_message = "There are {num_failing} failing metrics; see logs for more details"
-            raise ValueError(error_message.format(num_failing=num_failing_metrics))
-
-    def get_hook(self, method) -> HttpHook:
-        return HttpHook(http_conn_id=self.connection_id, method=method)
-
-    def _get_table_for_name(self, schema_name, table_name):
-        hook = self.get_hook('GET')
-        result = hook.run("dataset/tables/{warehouse_id}/{schema_name}"
-                          .format(warehouse_id=self.warehouse_id,
-                                  schema_name=schema_name),
-                          headers={"Accept": "application/json"})
-        tables = result.json()
-        for t in tables:
-            if t['datasetName'].lower() == table_name.lower():
-                return t
-        return None
+            return self.metric_ids
