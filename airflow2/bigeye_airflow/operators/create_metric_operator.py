@@ -4,10 +4,10 @@ from typing import List, Dict
 from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
+from bigeye_sdk.generated.com.torodata.models.generated import MetricConfiguration
 from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleCreateMetricRequest
 
 from airflow2.airflow_datawatch_client import AirflowDatawatchClient
-from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
 
 
 class CreateMetricOperator(BaseOperator):
@@ -35,15 +35,13 @@ class CreateMetricOperator(BaseOperator):
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
 
-        self.configuration = [CreateMetricConfiguration(**c) for c in
-                              configuration]
-        self.simple_configuration = [SimpleCreateMetricRequest(c["schema_name"],
-                                                               c["table_name"],
-                                                               c["column_name"],
-                                                               SimpleMetricTemplate(metric_name=c["metric_name"],
-                                                                                    metric_type=c["metric_type"]),
-                                                               c["existing_metric"])
-                                     for c in configuration]
+        self.configuration = [SimpleCreateMetricRequest(c["schema_name"],
+                                                        c["table_name"],
+                                                        c["column_name"],
+                                                        SimpleMetricTemplate(metric_name=c["metric_name"],
+                                                                             metric_type=c["metric_type"]),
+                                                        c["existing_metric"])
+                              for c in configuration]
 
         self.asset_ix = {}  # Initializing asset_ix
         self.client = AirflowDatawatchClient(connection_id)
@@ -56,14 +54,14 @@ class CreateMetricOperator(BaseOperator):
         """
         try:
             return self.asset_ix[schema_name.lower()][table_name.lower()]
-        except KeyError as ex:
+        except KeyError:
             logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
 
     def execute(self, context):
-        self.asset_ix = self._build_asset_ix(self.warehouse_id, self.simple_configuration)
+        self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
 
         # Iterate each configuration
-        for c in self.simple_configuration:
+        for c in self.configuration:
 
             if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
@@ -95,6 +93,8 @@ class CreateMetricOperator(BaseOperator):
             logging.info("Create result: %s", result.to_json())
             if c.should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
+
+            return result
 
     def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleCreateMetricRequest]) -> dict:
         """
