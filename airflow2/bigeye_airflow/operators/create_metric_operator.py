@@ -59,6 +59,7 @@ class CreateMetricOperator(BaseOperator):
 
     def execute(self, context):
         self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
+        created_metrics: List[MetricConfiguration] = []
 
         # Iterate each configuration
         for c in self.configuration:
@@ -85,7 +86,7 @@ class CreateMetricOperator(BaseOperator):
 
             metric = c.build_upsert_request_object(warehouse_id=self.warehouse_id, table=table)
 
-            if metric.get("id") is None and not is_freshness_metric(c.metric_template.metric_name):
+            if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
                 c.should_backfill = True
 
             result = self.client.create_metric(metric_configuration=metric)
@@ -94,7 +95,9 @@ class CreateMetricOperator(BaseOperator):
             if c.should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
 
-            return result
+            created_metrics.append(result)
+
+            return created_metrics
 
     def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleCreateMetricRequest]) -> dict:
         """
