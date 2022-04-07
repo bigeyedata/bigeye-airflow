@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from airflow1.bigeye_airflow.operators.create_metric_operator import get_case_sensitive_field_name
+from airflow1.bigeye_airflow1.operators.create_metric_operator import get_case_sensitive_field_name
 
 sample_table_metadata = {
         "id": 1225460,

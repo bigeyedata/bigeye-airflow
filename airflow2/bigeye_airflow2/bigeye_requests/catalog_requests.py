@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from airflow2.bigeye_airflow.bigeye_requests.http_hook import get_hook
-from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
+from airflow2.bigeye_airflow2.bigeye_requests.http_hook import get_hook
+from airflow2.bigeye_airflow2.models.configurations import CreateMetricConfiguration
 
 
 def _transform_table_field_list_to_dict(table: dict) -> dict:

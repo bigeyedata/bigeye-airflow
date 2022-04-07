@@ -2,7 +2,7 @@ import json
 import os
 from unittest import TestCase
 
-from airflow2.bigeye_airflow.bigeye_requests.catalog_requests import _transform_table_list_to_dict
+from airflow2.bigeye_airflow2.bigeye_requests.catalog_requests import _transform_table_list_to_dict
 
 DATASET_TABLES_RESPONSE_FILE = f"{os.getcwd()}/resources/dataset-tables-sample-response.json"
 DATASET_TABLES_TRANSFORMED_OUTPUT_FILE = f"{os.getcwd()}/resources/dataset-tables-transformed-output.json"

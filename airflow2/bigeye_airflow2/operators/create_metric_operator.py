@@ -7,7 +7,7 @@ from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 from bigeye_sdk.generated.com.torodata.models.generated import MetricConfiguration
 from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleCreateMetricRequest
 
-from airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class CreateMetricOperator(BaseOperator):

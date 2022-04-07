@@ -5,7 +5,7 @@ from airflow.models import BaseOperator
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
-from airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from airflow2.bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class RunMetricsOperator(BaseOperator):
@@ -29,25 +29,7 @@ class RunMetricsOperator(BaseOperator):
     def execute(self, context):
 
         metric_ids_to_run = self._set_metric_ids_to_run()
-
-        num_failing_metrics = 0
-        success_and_failures = {}
-        logging.debug("Running metric IDs: %s", metric_ids_to_run)
-        metric_infos: List[MetricInfo] = self.client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
-        for mi in metric_infos:
-            if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:
-                logging.error(f"Metric is not OK: {mi.metric_configuration.name}")
-                logging.error(f"Metric result: {mi.metric_configuration}")
-                success_and_failures["failure"] = mi
-                num_failing_metrics += 1
-            else:
-                success_and_failures["success"] = mi
-        # TODO: We shouldn't kill the pipeline because of errors. The user should be able to handle how they choose.
-        # if num_failing_metrics > 0:
-        #     error_message = "There are {num_failing} failing metrics; see logs for more details"
-        #     raise ValueError(error_message.format(num_failing=num_failing_metrics))
-
-        return success_and_failures
+        return self._run_metrics(metric_ids_to_run)
 
     def _get_table_for_name(self, schema_name, table_name) -> Table:
         tables = self.client.get_tables(warehouse_id=self.warehouse_id,
@@ -69,3 +51,24 @@ class RunMetricsOperator(BaseOperator):
             return [m.id for m in metrics]
         else:
             return self.metric_ids
+
+    def _run_metrics(self, metric_ids_to_run: List[int]) -> dict:
+        success: List[MetricInfo] = []
+        failure: List[MetricInfo] = []
+        logging.debug("Running metric IDs: %s", metric_ids_to_run)
+        metric_infos: List[MetricInfo] = self.client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
+        num_failing_metrics = 0
+        for mi in metric_infos:
+            if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:
+                logging.error(f"Metric is not OK: {mi.metric_configuration.name}")
+                logging.error(f"Metric result: {mi.metric_configuration}")
+                failure.append(mi)
+                num_failing_metrics += 1
+            else:
+                success.append(mi)
+        # TODO: We shouldn't kill the pipeline because of errors. The user should be able to handle how they choose.
+        # if num_failing_metrics > 0:
+        #     error_message = "There are {num_failing} failing metrics; see logs for more details"
+        #     raise ValueError(error_message.format(num_failing=num_failing_metrics))
+
+        return {"success": success, "failure": failure}

@@ -2,7 +2,7 @@ import json
 import logging
 from typing import List
 
-from airflow2.bigeye_airflow.bigeye_requests.http_hook import get_hook
+from airflow2.bigeye_airflow2.bigeye_requests.http_hook import get_hook
 from bigeye_sdk.functions.metric_functions import is_same_type_metric, is_same_column_metric
 
 
