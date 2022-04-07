@@ -1,8 +1,8 @@
 import logging
 
+from airflow.providers.http.hooks.http import HttpHook
 from bigeye_sdk.datawatch_client import DatawatchClient, Method
-
-from bigeye_requests.http_hook import get_hook
+from bigeye_airflow2.bigeye_requests.http_hook import get_hook
 
 headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
@@ -13,7 +13,7 @@ class AirflowDatawatchClient(DatawatchClient):
         pass
 
     def _call_datawatch(self, method: Method, url, body: str = None):
-        bigeye_request_hook = get_hook(self.conn_id, method.name)
+        bigeye_request_hook = self._get_hook(method.name)
         try:
             response = bigeye_request_hook.run(
                 endpoint=url,
@@ -26,4 +26,7 @@ class AirflowDatawatchClient(DatawatchClient):
 
         if response.status_code != 204:
             return response.json()
+
+    def _get_hook(self, method) -> HttpHook:
+        return HttpHook(http_conn_id=self.conn_id, method=method)
 
