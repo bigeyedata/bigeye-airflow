@@ -2,7 +2,7 @@ import logging
 
 from airflow.providers.http.hooks.http import HttpHook
 from bigeye_sdk.datawatch_client import DatawatchClient, Method
-from bigeye_airflow2.bigeye_requests.http_hook import get_hook
+
 
 headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
