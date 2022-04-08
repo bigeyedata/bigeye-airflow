@@ -14,8 +14,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577745,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -25,8 +25,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577746,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -36,8 +36,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577747,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -47,8 +47,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577748,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -58,8 +58,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577749,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -69,8 +69,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577750,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -80,8 +80,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577751,
                 "partitionField": False,
-                "canBeLoadedDate": True,
-                "loadedDateField": False,
+                "canBeMetricTime": True,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -91,8 +91,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577752,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -102,8 +102,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577753,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -113,8 +113,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577754,
                 "partitionField": False,
-                "canBeLoadedDate": True,
-                "loadedDateField": False,
+                "canBeMetricTime": True,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -124,8 +124,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577755,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -135,8 +135,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577756,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -146,8 +146,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577757,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -157,8 +157,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577758,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -168,8 +168,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577759,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -179,8 +179,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577760,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -190,8 +190,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577761,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -201,8 +201,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577762,
                 "partitionField": False,
-                "canBeLoadedDate": True,
-                "loadedDateField": False,
+                "canBeMetricTime": True,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -212,8 +212,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577763,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -223,8 +223,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577764,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -234,8 +234,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577765,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -245,8 +245,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577766,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -256,8 +256,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577767,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -267,8 +267,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577768,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -278,8 +278,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577769,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -289,8 +289,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577770,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -300,8 +300,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577771,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -311,8 +311,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577772,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -322,8 +322,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577773,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -333,8 +333,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577774,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -344,8 +344,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577775,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             },
             {
@@ -355,8 +355,8 @@ sample_table_metadata = {
                 "nullable": True,
                 "entityId": 11577776,
                 "partitionField": False,
-                "canBeLoadedDate": False,
-                "loadedDateField": False,
+                "canBeMetricTime": False,
+                "metricTimeField": False,
                 "entityType": "DatasetField"
             }
         ],
