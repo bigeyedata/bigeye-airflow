@@ -5,7 +5,7 @@ from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 from bigeye_sdk.generated.com.torodata.models.generated import MetricConfiguration
-from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleCreateMetricRequest
+from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleUpsertMetricRequest
 
 from bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
 
@@ -35,7 +35,7 @@ class CreateMetricOperator(BaseOperator):
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
 
-        self.configuration = [SimpleCreateMetricRequest(c["schema_name"],
+        self.configuration = [SimpleUpsertMetricRequest(c["schema_name"],
                                                         c["table_name"],
                                                         c["column_name"],
                                                         SimpleMetricTemplate(metric_name=c["metric_name"],
@@ -94,10 +94,6 @@ class CreateMetricOperator(BaseOperator):
             logging.info("Create result: %s", result.to_json())
             if c.should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
-
-            created_metrics.append(result)
-
-            return created_metrics
 
     def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleCreateMetricRequest]) -> dict:
         """
