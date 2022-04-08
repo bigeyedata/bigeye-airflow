@@ -2,7 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 
 from bigeye_sdk.datawatch_client import Method
-from bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class TestAirflowDatawatchClient(TestCase):

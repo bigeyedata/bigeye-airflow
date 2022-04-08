@@ -5,7 +5,7 @@ from airflow.models import BaseOperator
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
-from airflow2.bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from airflow2.bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class RunMetricsOperator(BaseOperator):
