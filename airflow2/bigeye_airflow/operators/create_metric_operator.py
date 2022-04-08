@@ -5,14 +5,14 @@ from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 from bigeye_sdk.generated.com.torodata.models.generated import MetricConfiguration
-from bigeye_sdk.model.configuration_templates import SimpleMetricTemplate, SimpleUpsertMetricRequest
+from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 
-from bigeye_airflow2.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class CreateMetricOperator(BaseOperator):
     """
-    The CreateMetricOperator takes a list of CreateMetricConfiguration objects and instantiates them according to the
+    The CreateMetricOperator takes a list of SimpleUpsertMetricRequest objects and instantiates them according to the
     business logic of Bigeye's API.
     """
 
@@ -35,12 +35,7 @@ class CreateMetricOperator(BaseOperator):
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
 
-        self.configuration = [SimpleUpsertMetricRequest(c["schema_name"],
-                                                        c["table_name"],
-                                                        c["column_name"],
-                                                        SimpleMetricTemplate(metric_name=c["metric_name"],
-                                                                             metric_type=c["metric_type"]),
-                                                        c["existing_metric"])
+        self.configuration = [SimpleUpsertMetricRequest.from_dict(**c)
                               for c in configuration]
 
         self.asset_ix = {}  # Initializing asset_ix
@@ -48,9 +43,9 @@ class CreateMetricOperator(BaseOperator):
 
     def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
         """
-        :param schema_name: name of schema containing table
-        :param table_name: name of table
-        :return: table entry as a dictionary
+        param schema_name: name of schema containing table
+        param table_name: name of table
+        return: table entry as a dictionary
         """
         try:
             return self.asset_ix[schema_name.lower()][table_name.lower()]
@@ -90,12 +85,15 @@ class CreateMetricOperator(BaseOperator):
                 c.should_backfill = True
 
             result = self.client.create_metric(metric_configuration=metric)
+            created_metrics.append(result)
 
             logging.info("Create result: %s", result.to_json())
             if c.should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
 
-    def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleCreateMetricRequest]) -> dict:
+            return created_metrics
+
+    def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleUpsertMetricRequest]) -> dict:
         """
         Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
         :param warehouse_id: int id of Bigeye warehouse
