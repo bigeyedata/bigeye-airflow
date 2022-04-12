@@ -35,7 +35,7 @@ class CreateMetricOperator(BaseOperator):
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
 
-        self.configuration = [SimpleUpsertMetricRequest.from_dict(**c)
+        self.configuration = [SimpleUpsertMetricRequest.from_dict(c)
                               for c in configuration]
 
         self.asset_ix = {}  # Initializing asset_ix
@@ -54,7 +54,7 @@ class CreateMetricOperator(BaseOperator):
 
     def execute(self, context):
         self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
-        created_metrics: List[MetricConfiguration] = []
+        created_metrics: List[str] = []
 
         # Iterate each configuration
         for c in self.configuration:
@@ -75,20 +75,21 @@ class CreateMetricOperator(BaseOperator):
             c.existing_metric = self.client.get_existing_metric(self.warehouse_id,
                                                                 table,
                                                                 c.column_name,
-                                                                c.metric_template.metric_name,
+                                                                c.metric_template.metric_type,
                                                                 c.group_by,
                                                                 c.metric_template.filters)
 
             metric = c.build_upsert_request_object(warehouse_id=self.warehouse_id, table=table)
 
+            should_backfill = False
             if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
-                c.should_backfill = True
+                should_backfill = True
 
             result = self.client.create_metric(metric_configuration=metric)
-            created_metrics.append(result)
+            created_metrics.append(result.to_json())
 
             logging.info("Create result: %s", result.to_json())
-            if c.should_backfill and result.id is not None and table_has_metric_time(table):
+            if should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
 
             return created_metrics
