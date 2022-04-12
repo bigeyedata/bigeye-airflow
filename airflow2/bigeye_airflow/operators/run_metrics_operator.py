@@ -5,7 +5,7 @@ from airflow.models import BaseOperator
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
-from airflow2.bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class RunMetricsOperator(BaseOperator):
@@ -53,8 +53,8 @@ class RunMetricsOperator(BaseOperator):
             return self.metric_ids
 
     def _run_metrics(self, metric_ids_to_run: List[int]) -> dict:
-        success: List[MetricInfo] = []
-        failure: List[MetricInfo] = []
+        success: List[str] = []
+        failure: List[str] = []
         logging.debug("Running metric IDs: %s", metric_ids_to_run)
         metric_infos: List[MetricInfo] = self.client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
         num_failing_metrics = 0
@@ -62,10 +62,10 @@ class RunMetricsOperator(BaseOperator):
             if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:
                 logging.error(f"Metric is not OK: {mi.metric_configuration.name}")
                 logging.error(f"Metric result: {mi.metric_configuration}")
-                failure.append(mi)
+                failure.append(mi.to_json())
                 num_failing_metrics += 1
             else:
-                success.append(mi)
+                success.append(mi.to_json())
         # TODO: We shouldn't kill the pipeline because of errors. The user should be able to handle how they choose.
         # if num_failing_metrics > 0:
         #     error_message = "There are {num_failing} failing metrics; see logs for more details"
