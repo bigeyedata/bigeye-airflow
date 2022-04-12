@@ -1,9 +1,10 @@
 from typing import List, Dict
 
-from airflow2.bigeye_airflow.bigeye_requests.http_hook import get_hook
-from airflow2.bigeye_airflow.models.configurations import CreateMetricConfiguration
+from bigeye_airflow.bigeye_requests.http_hook import get_hook
+from bigeye_airflow.models.configurations import CreateMetricConfiguration
 
 
+# TODO: These have been moved to the SDK at table_functions or to create_metrics_operator as helper functions.
 def _transform_table_field_list_to_dict(table: dict) -> dict:
     """
     Converts the table['fields'] list to a dictionary of { <tableName.lower>: <field_entry> } for quick, easy,
