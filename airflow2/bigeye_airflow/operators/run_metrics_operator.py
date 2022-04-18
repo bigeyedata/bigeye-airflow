@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from airflow.models import BaseOperator
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
@@ -10,12 +10,14 @@ from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 class RunMetricsOperator(BaseOperator):
 
+    template_fields = ["metric_ids"]
+
     def __init__(self,
-                 connection_id,
-                 warehouse_id,
-                 schema_name,
-                 table_name,
-                 metric_ids=None,
+                 connection_id: str,
+                 warehouse_id: Optional[int] = None,
+                 schema_name: Optional[str] = None,
+                 table_name: Optional[str] = None,
+                 metric_ids: Optional[List[int]] = None,
                  *args,
                  **kwargs):
         super(RunMetricsOperator, self).__init__(*args, **kwargs)
@@ -32,8 +34,8 @@ class RunMetricsOperator(BaseOperator):
         return self._run_metrics(metric_ids_to_run)
 
     def _get_table_for_name(self, schema_name, table_name) -> Table:
-        tables = self.client.get_tables(warehouse_id=self.warehouse_id,
-                                        schemas=[schema_name],
+        tables = self.client.get_tables(warehouse_id=[self.warehouse_id],
+                                        schema=[schema_name],
                                         table_name=[table_name]).tables
 
         if not tables:
