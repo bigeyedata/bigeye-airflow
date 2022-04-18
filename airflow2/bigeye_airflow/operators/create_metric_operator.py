@@ -4,9 +4,7 @@ from typing import List, Dict
 from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
-from bigeye_sdk.generated.com.torodata.models.generated import MetricConfiguration
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
-
 from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
@@ -54,7 +52,7 @@ class CreateMetricOperator(BaseOperator):
 
     def execute(self, context):
         self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
-        created_metrics: List[str] = []
+        created_metrics_ids: List[int] = []
 
         # Iterate each configuration
         for c in self.configuration:
@@ -86,13 +84,13 @@ class CreateMetricOperator(BaseOperator):
                 should_backfill = True
 
             result = self.client.create_metric(metric_configuration=metric)
-            created_metrics.append(result.to_json())
+            created_metrics_ids.append(result.id)
 
             logging.info("Create result: %s", result.to_json())
             if should_backfill and result.id is not None and table_has_metric_time(table):
                 self.client.backfill_metric(metric_ids=[result.id])
 
-            return created_metrics
+            return created_metrics_ids
 
     def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleUpsertMetricRequest]) -> dict:
         """
