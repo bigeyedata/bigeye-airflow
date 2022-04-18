@@ -9,6 +9,13 @@ from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
 
 class RunMetricsOperator(BaseOperator):
+    """
+        The RunMetricsOperator will run metrics in Bigeye based on the following:
+        1. All metrics for a given table, by providing warehouse ID, schema name and table name.
+        2. Any or all metrics, given a list of metric IDs.
+        Currently, if a list of metric IDs is provided these will be run instead of metrics provided for
+        warehouse_id, schema_name, table_name.
+    """
 
     template_fields = ["metric_ids"]
 
@@ -20,6 +27,15 @@ class RunMetricsOperator(BaseOperator):
                  metric_ids: Optional[List[int]] = None,
                  *args,
                  **kwargs):
+        """
+                param connection_id: str referencing a defined connection in the Airflow deployment.
+                param warehouse_id: Optional[int] id of the warehouse where the operator will run the metrics.
+                param schema_name: Optional[str] name of the schema where the table resides.
+                param table_name: Optional[str] name of the table to run all metrics.
+                param metric_ids: Optional[List[int]] list of metric IDs to run.
+                param args: not currently supported
+                param kwargs: not currently supported
+        """
         super(RunMetricsOperator, self).__init__(*args, **kwargs)
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
