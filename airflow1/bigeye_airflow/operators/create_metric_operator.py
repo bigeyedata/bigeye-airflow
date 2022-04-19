@@ -122,7 +122,7 @@ class CreateMetricOperator(BaseOperator):
 
     def _table_has_metric_time(self, table):
         for field in table["fields"]:
-            if field["loadedDateField"]:
+            if field["metricTimeField"]:
                 return True
         return False
 
@@ -176,7 +176,7 @@ class CreateMetricOperator(BaseOperator):
         table_has_metric_time = False
         if not is_freshness_metric:
             for field in table["fields"]:
-                if field["loadedDateField"]:
+                if field["metricTimeField"]:
                     table_has_metric_time = True
         if table_has_metric_time:
             metric["lookbackType"] = lookback_type
