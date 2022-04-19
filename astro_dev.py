@@ -1,11 +1,9 @@
 import fileinput
+import logging as logging
 import os
 import shutil
 import sys
-
 import typer
-
-import logging as logging
 
 app = typer.Typer()
 

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from models.configurations import CreateMetricConfiguration
+from bigeye_airflow.models.configurations import CreateMetricConfiguration
 
 
 class TestCreateMetricConfiguration(TestCase):

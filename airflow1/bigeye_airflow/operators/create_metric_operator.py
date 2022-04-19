@@ -1,11 +1,10 @@
 import datetime
-import logging
 import json
-from functools import reduce
-
+import logging
 from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
+from functools import reduce
 
 
 def get_case_sensitive_field_name(table: dict, inbound_field_name: str) -> str:

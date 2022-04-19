@@ -1,12 +1,13 @@
 from setuptools import setup, find_packages
-import version
+
+from __version__ import version
 
 with open("../README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="bigeye-airflow1",
-    version=version.__version__,
+    name="bigeye_airflow",
+    version=version,
     author="Bigeye",
     author_email="support@bigeye.com",
     description="Airflow operators to be used with Bigeye.  Supporting Airflow version 1.10.10.",
