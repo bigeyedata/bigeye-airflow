@@ -84,9 +84,5 @@ class RunMetricsOperator(BaseOperator):
                 num_failing_metrics += 1
             else:
                 success.append(mi.to_json())
-        # TODO: We shouldn't kill the pipeline because of errors. The user should be able to handle how they choose.
-        # if num_failing_metrics > 0:
-        #     error_message = "There are {num_failing} failing metrics; see logs for more details"
-        #     raise ValueError(error_message.format(num_failing=num_failing_metrics))
 
         return {"success": success, "failure": failure}
