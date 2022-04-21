@@ -73,7 +73,7 @@ class CreateMetricOperator(BaseOperator):
             c.existing_metric = self.client.get_existing_metric(self.warehouse_id,
                                                                 table,
                                                                 c.column_name,
-                                                                c.metric_template.metric_type,
+                                                                c.metric_template.metric_name,
                                                                 c.group_by,
                                                                 c.metric_template.filters)
 
