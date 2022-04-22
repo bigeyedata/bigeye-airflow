@@ -40,4 +40,10 @@ with DAG('test_create_and_run_metric_dag',
         ],
         dag=dag
     )
-    run_metric_results = RunMetricsOperator(task_id='run_metrics', connection_id='bigeye_connection', metric_ids=)
+    run_metric_results = RunMetricsOperator(task_id='run_metrics',
+                                            connection_id='bigeye_connection',
+                                            warehouse_id=0,
+                                            schema_name=None,
+                                            table_name=None,
+                                            metric_ids=created_metrics_results.output,
+                                            dag=dag)
