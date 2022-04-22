@@ -1,7 +1,6 @@
-#apache-airflow>=2.0.2
 setuptools~=57.0.0
 boto3~=1.19.9
-bigeye-sdk>=0.2.0
+bigeye_sdk>=0.2.0
 requests~=2.26.0
 betterproto==1.2.5
 protobuf~=3.19.4
