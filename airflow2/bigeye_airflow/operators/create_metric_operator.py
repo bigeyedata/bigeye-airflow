@@ -3,7 +3,6 @@ from typing import List, Dict
 
 from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
-from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
 from bigeye_sdk.generated.com.torodata.models.generated import TableList, Table
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
