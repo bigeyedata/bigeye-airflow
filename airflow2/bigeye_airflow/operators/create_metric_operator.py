@@ -4,6 +4,7 @@ from typing import List, Dict
 from airflow.models import BaseOperator
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
 from bigeye_sdk.functions.table_functions import transform_table_list_to_dict
+from bigeye_sdk.generated.com.torodata.models.generated import TableList, Table
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
 
@@ -60,21 +61,17 @@ class CreateMetricOperator(BaseOperator):
             if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
-            table: dict = self._get_table_entry_for_name(c.schema_name, c.table_name)
+            table: Table = self.client.get_tables(warehouse_id=self.warehouse_id, schema=c.schema_name,
+                                                  table_name=c.table_name).tables[0]
 
-            logging.info(table)
-
-            # Validate and replace group column names -- to ameliorate incorrect case.
-            c.group_by = [table['fields'][col.lower()]['fieldName'] for col in c.metric_template.group_by]
-
-            if table is None or table.get("id") is None:
+            if not table:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
             c.existing_metric = self.client.get_existing_metric(self.warehouse_id,
                                                                 table,
                                                                 c.column_name,
                                                                 c.metric_template.metric_name,
-                                                                c.group_by,
+                                                                c.metric_template.group_by,
                                                                 c.metric_template.filters)
 
             metric = c.build_upsert_request_object(warehouse_id=self.warehouse_id, table=table)
