@@ -37,19 +37,19 @@ class CreateMetricOperator(BaseOperator):
         self.configuration = [SimpleUpsertMetricRequest.from_dict(c)
                               for c in configuration]
 
-        self.asset_ix = {}  # Initializing asset_ix
+        # self.asset_ix = {}  # Initializing asset_ix
         self.client = AirflowDatawatchClient(connection_id)
 
-    def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
-        """
-        param schema_name: name of schema containing table
-        param table_name: name of table
-        return: table entry as a dictionary
-        """
-        try:
-            return self.asset_ix[schema_name.lower()][table_name.lower()]
-        except KeyError:
-            logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
+    # def _get_table_entry_for_name(self, schema_name: str, table_name: str) -> dict:
+    #     """
+    #     param schema_name: name of schema containing table
+    #     param table_name: name of table
+    #     return: table entry as a dictionary
+    #     """
+    #     try:
+    #         return self.asset_ix[schema_name.lower()][table_name.lower()]
+    #     except KeyError:
+    #         logging.error(f'schema: {schema_name}, warehouse: {self.warehouse_id} does not contain table: {table_name}')
 
     def execute(self, context):
         self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
@@ -89,17 +89,17 @@ class CreateMetricOperator(BaseOperator):
 
             return created_metrics_ids
 
-    def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleUpsertMetricRequest]) -> dict:
-        """
-        Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
-        :param warehouse_id: int id of Bigeye warehouse
-        :param conf: the CreateMetricConfiguration object
-        :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
-        """
-        return {sn.lower(): self.__get_asset_ix(warehouse_id, sn)
-                for sn in {c.schema_name for c in conf}}
-
-    def __get_asset_ix(self, warehouse_id: int, schema_name: str) -> Dict[str, dict]:
-        return transform_table_list_to_dict(
-            self.client.get_dataset(warehouse_id, schema_name)
-        )
+    # def _build_asset_ix(self, warehouse_id: int, conf: List[SimpleUpsertMetricRequest]) -> dict:
+    #     """
+    #     Builds a case-insensitive, keyable index of assets needed by the CreateMetricConfiguration
+    #     :param warehouse_id: int id of Bigeye warehouse
+    #     :param conf: the CreateMetricConfiguration object
+    #     :return: { <schema_name.lower>: { <table_name.lower>: <transformed_table_entry> }}
+    #     """
+    #     return {sn.lower(): self.__get_asset_ix(warehouse_id, sn)
+    #             for sn in {c.schema_name for c in conf}}
+    #
+    # def __get_asset_ix(self, warehouse_id: int, schema_name: str) -> Dict[str, dict]:
+    #     return transform_table_list_to_dict(
+    #         self.client.get_dataset(warehouse_id, schema_name)
+    #     )
