@@ -23,13 +23,13 @@ python3 -m pip install twine setuptools wheel
 python3 setup.py bdist_wheel
 if $r2p -eq true
 then
-  twine upload --skip-existing dist/* --verbose TODO uncomment when we want to push to public
+  twine upload --skip-existing dist/* --verbose
 fi
 VERSION=$(python3 setup.py --version)
 PACKAGE=$(python3 setup.py --name)
 aws codeartifact delete-package-versions --domain bigeye --domain-owner 021451147547 \
 --repository pypi-store --format pypi \
---package "$PACKAGE" --versions "$VERSION" --profile toro
+--package "$PACKAGE" --versions "$VERSION" --profile toro > /dev/null
 twine upload --repository codeartifact --skip-existing dist/*
 rm -rf dist
 rm -rf .egg-info
