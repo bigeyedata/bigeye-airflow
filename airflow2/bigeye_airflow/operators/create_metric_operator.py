@@ -1,14 +1,16 @@
 import logging
-from typing import List, Dict
+from typing import List
 
-from airflow.models import BaseOperator
+from bigeye_sdk.datawatch_client import DatawatchClient
 from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
-from bigeye_sdk.generated.com.torodata.models.generated import TableList, Table
+from bigeye_sdk.generated.com.torodata.models.generated import Table
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
-from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
+
+from airflow2.bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
+from airflow2.bigeye_airflow.operators.client_extensible_operator import ClientExtensibleOperator
 
 
-class CreateMetricOperator(BaseOperator):
+class CreateMetricOperator(ClientExtensibleOperator):
     """
     The CreateMetricOperator takes a list of SimpleUpsertMetricRequest objects and instantiates them according to the
     business logic of Bigeye's API.
@@ -36,8 +38,13 @@ class CreateMetricOperator(BaseOperator):
         self.configuration = [SimpleUpsertMetricRequest.from_dict(c)
                               for c in configuration]
 
-        self.client = AirflowDatawatchClient(connection_id)
+        self.connection_id = connection_id
+        self.client = None
 
+    def get_client(self) -> DatawatchClient:
+        if not self.client:
+            self.client = AirflowDatawatchClient(self.connection_id)
+        return self.client
 
     def execute(self, context):
         self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
@@ -49,13 +56,13 @@ class CreateMetricOperator(BaseOperator):
             if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
-            table: Table = self.client.get_tables(warehouse_id=self.warehouse_id, schema=c.schema_name,
+            table: Table = self.get_client.get_tables(warehouse_id=self.warehouse_id, schema=c.schema_name,
                                                   table_name=c.table_name).tables[0]
 
             if not table:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
-            c.existing_metric = self.client.get_existing_metric(self.warehouse_id,
+            c.existing_metric = self.get_client.get_existing_metric(self.warehouse_id,
                                                                 table,
                                                                 c.column_name,
                                                                 c.metric_template.metric_name,
@@ -68,11 +75,11 @@ class CreateMetricOperator(BaseOperator):
             if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
                 should_backfill = True
 
-            result = self.client.create_metric(metric_configuration=metric)
+            result = self.get_client.create_metric(metric_configuration=metric)
             created_metrics_ids.append(result.id)
 
             logging.info("Create result: %s", result.to_json())
             if should_backfill and result.id is not None and table_has_metric_time(table):
-                self.client.backfill_metric(metric_ids=[result.id])
+                self.get_client.backfill_metric(metric_ids=[result.id])
 
             return created_metrics_ids
