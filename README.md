@@ -2,17 +2,15 @@
 Airflow operators to interact with Bigeye API.
 
 ## The Test Environment
-[Astronomer](astronomer.io) provides a local runtime for Airflow DAGs.  This runtime
-is build from the Dockerfile in the astro folder.  A startup bash script has been 
-added, ***astro_dev***, to facilitate the needed code copy into the astro environment.
-
-Test environment is currently compatible with Python 3.6 and Airflow 1.10.7.
-
+Setup/Initialization
 ```shell
-bash astro_dev start <-v 1>
-bash astro_dev stop <-v 1>
-bash astro_dev restart <-v 1>
-```  
+bash quickstart.sh -i
+```
+Run
+```shell
+bash quickstart.sh
+```
+
 ### Credentials Setup
 * Go to the Admin menu and choose Connections:
     ![Admin Menu - Connections](docs/images/astronomer_connections_1.png "Admin Menu - Connections")  
