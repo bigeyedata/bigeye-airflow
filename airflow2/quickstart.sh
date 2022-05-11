@@ -70,22 +70,8 @@ fi
 
 if $stop -eq true
 then
-  if test -f ~/running_airflow_webserver.pid
-  then
-    echo "killing webserver."
-    WPID=$(cat ~/running_airflow_webserver.pid)
-    kill "$WPID"
-    rm ~/running_airflow_webserver.pid
-  fi
-  if test -f ~/running_airflow_scheduler.pid
-  then
-    echo "killing scheduler."
-    SPID=$(cat ~/running_airflow_scheduler.pid)
-    kill "$SPID"
-    rm ~/running_airflow_scheduler.pid
-  fi
-  if ! test -f ~/running_airflow_webserver.pid && ! test -f ~/running_airflow_scheduler.pid
-  then
-    echo "airflow not running"
-  fi
+  echo "stopping airflow."
+  pkill -9 airflow
+  rm -f  ~/running_airflow_webserver.pid
+  rm -f ~/running_airflow_scheduler.pid
 fi
