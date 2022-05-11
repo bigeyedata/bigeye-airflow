@@ -53,6 +53,7 @@ fi
 
 if $run -eq true
 then
+export AIRFLOW__CORE__KILLED_TASK_CLEANUP_TIME=604800
 . venv/bin/activate
 pip uninstall bigeye-airflow -y
 pip install .
