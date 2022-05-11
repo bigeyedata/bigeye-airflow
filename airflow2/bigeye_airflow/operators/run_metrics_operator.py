@@ -57,9 +57,9 @@ class RunMetricsOperator(ClientExtensibleOperator):
         return self._run_metrics(metric_ids_to_run)
 
     def _get_table_for_name(self, schema_name, table_name) -> Table:
-        tables = self.get_client.get_tables(warehouse_id=[self.warehouse_id],
-                                        schema=[schema_name],
-                                        table_name=[table_name]).tables
+        tables = self.get_client().get_tables(warehouse_id=[self.warehouse_id],
+                                              schema=[schema_name],
+                                              table_name=[table_name]).tables
 
         if not tables:
             raise Exception(f"Could not find table: {self.table_name} in {self.schema_name}")
@@ -69,7 +69,7 @@ class RunMetricsOperator(ClientExtensibleOperator):
     def _set_metric_ids_to_run(self) -> List[int]:
         if self.metric_ids is None:
             table = self._get_table_for_name(self.schema_name, self.table_name)
-            metrics: List[MetricConfiguration] = self.get_client.search_metric_configuration(
+            metrics: List[MetricConfiguration] = self.get_client().search_metric_configuration(
                 warehouse_ids=[table.warehouse_id],
                 table_ids=[table.id]).metrics
 
@@ -81,7 +81,7 @@ class RunMetricsOperator(ClientExtensibleOperator):
         success: List[str] = []
         failure: List[str] = []
         logging.debug("Running metric IDs: %s", metric_ids_to_run)
-        metric_infos: List[MetricInfo] = self.get_client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
+        metric_infos: List[MetricInfo] = self.get_client().run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
         num_failing_metrics = 0
         for mi in metric_infos:
             if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:

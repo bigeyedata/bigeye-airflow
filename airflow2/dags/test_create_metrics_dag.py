@@ -23,7 +23,7 @@ with DAG('test_create_metric_dag',
     create_metrics_from_config = CreateMetricOperator(
         task_id='create_metrics',
         connection_id='bigeye_connection',
-        warehouse_id=516,
+        warehouse_id=512,
         configuration=[
             {"schema_name": "BIGEYE_DEMO.DEMO",
              "table_name": "PAYMENTS",
