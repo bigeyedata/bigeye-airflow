@@ -38,9 +38,7 @@ class CreateMetricOperator(BaseOperator):
 
         self.client = AirflowDatawatchClient(connection_id)
 
-
     def execute(self, context):
-        self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
         created_metrics_ids: List[int] = []
 
         # Iterate each configuration
@@ -49,8 +47,8 @@ class CreateMetricOperator(BaseOperator):
             if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
-            table: Table = self.client.get_tables(warehouse_id=self.warehouse_id, schema=c.schema_name,
-                                                  table_name=c.table_name).tables[0]
+            table: Table = self.client.get_tables(warehouse_id=[self.warehouse_id], schema=[c.schema_name],
+                                                  table_name=[c.table_name]).tables[0]
 
             if not table:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
@@ -62,13 +60,13 @@ class CreateMetricOperator(BaseOperator):
                                                                 c.metric_template.group_by,
                                                                 c.metric_template.filters)
 
-            metric = c.build_upsert_request_object(warehouse_id=self.warehouse_id, table=table)
+            metric = c.build_upsert_request_object(target_table=table)
 
             should_backfill = False
             if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
                 should_backfill = True
 
-            result = self.client.create_metric(metric_configuration=metric)
+            result = self.client.upsert_metric(metric_configuration=metric)
             created_metrics_ids.append(result.id)
 
             logging.info("Create result: %s", result.to_json())

@@ -7,7 +7,6 @@ from airflow.utils.decorators import apply_defaults
 
 class RunMetricsOperator(BaseOperator):
 
-    @apply_defaults
     def __init__(self,
                  connection_id,
                  warehouse_id,
