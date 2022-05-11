@@ -6,8 +6,8 @@ from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has
 from bigeye_sdk.generated.com.torodata.models.generated import Table
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 
-from airflow2.bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
-from airflow2.bigeye_airflow.operators.client_extensible_operator import ClientExtensibleOperator
+from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow.operators.client_extensible_operator import ClientExtensibleOperator
 
 
 class CreateMetricOperator(ClientExtensibleOperator):
@@ -47,7 +47,6 @@ class CreateMetricOperator(ClientExtensibleOperator):
         return self.client
 
     def execute(self, context):
-        self.asset_ix = self._build_asset_ix(self.warehouse_id, self.configuration)
         created_metrics_ids: List[int] = []
 
         # Iterate each configuration
