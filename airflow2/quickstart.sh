@@ -40,10 +40,7 @@ then
 airflow users  create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
 fi
 
-if [[ "$VIRTUAL_ENV" != "" ]]
-then
-  . venv/bin/activate
-fi
+. venv/bin/activate
 
 # start the web server, default port is 8080
 airflow webserver --port 8080
