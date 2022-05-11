@@ -1,14 +1,15 @@
 import logging
 from typing import List, Optional
 
-from airflow.models import BaseOperator
+from bigeye_sdk.datawatch_client import DatawatchClient
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
 from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
+from bigeye_airflow.operators.client_extensible_operator import ClientExtensibleOperator
 
 
-class RunMetricsOperator(BaseOperator):
+class RunMetricsOperator(ClientExtensibleOperator):
     """
         The RunMetricsOperator will run metrics in Bigeye based on the following:
         1. All metrics for a given table, by providing warehouse ID, schema name and table name.
@@ -42,7 +43,13 @@ class RunMetricsOperator(BaseOperator):
         self.schema_name = schema_name
         self.table_name = table_name
         self.metric_ids = metric_ids
-        self.client = AirflowDatawatchClient(connection_id)
+        self.connection_id = connection_id;
+        self.client = None
+
+    def get_client(self) -> DatawatchClient:
+        if not self.client:
+            self.client = AirflowDatawatchClient(self.connection_id)
+        return self.client
 
     def execute(self, context):
 
@@ -50,9 +57,9 @@ class RunMetricsOperator(BaseOperator):
         return self._run_metrics(metric_ids_to_run)
 
     def _get_table_for_name(self, schema_name, table_name) -> Table:
-        tables = self.client.get_tables(warehouse_id=[self.warehouse_id],
-                                        schema=[schema_name],
-                                        table_name=[table_name]).tables
+        tables = self.get_client().get_tables(warehouse_id=[self.warehouse_id],
+                                              schema=[schema_name],
+                                              table_name=[table_name]).tables
 
         if not tables:
             raise Exception(f"Could not find table: {self.table_name} in {self.schema_name}")
@@ -62,7 +69,7 @@ class RunMetricsOperator(BaseOperator):
     def _set_metric_ids_to_run(self) -> List[int]:
         if self.metric_ids is None:
             table = self._get_table_for_name(self.schema_name, self.table_name)
-            metrics: List[MetricConfiguration] = self.client.search_metric_configuration(
+            metrics: List[MetricConfiguration] = self.get_client().search_metric_configuration(
                 warehouse_ids=[table.warehouse_id],
                 table_ids=[table.id]).metrics
 
@@ -74,7 +81,7 @@ class RunMetricsOperator(BaseOperator):
         success: List[str] = []
         failure: List[str] = []
         logging.debug("Running metric IDs: %s", metric_ids_to_run)
-        metric_infos: List[MetricInfo] = self.client.run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
+        metric_infos: List[MetricInfo] = self.get_client().run_metric_batch(metric_ids=metric_ids_to_run).metric_infos
         num_failing_metrics = 0
         for mi in metric_infos:
             if mi.status is not MetricRunStatus.METRIC_RUN_STATUS_OK:

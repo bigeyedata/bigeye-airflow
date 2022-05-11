@@ -26,7 +26,7 @@ def get_not_metric_time_enabled_statistics():
 
 def enforce_lookback_type_defaults(metric_name: str, lookback_type: str) -> str:
     if metric_name.lower() in get_not_metric_time_enabled_statistics():
-        return 'DATE_TIME_LOOKBACK'
+        return 'DATA_TIME_LOOKBACK_TYPE'
     elif lookback_type is None:
         return "METRIC_TIME_LOOKBACK_TYPE"
     else:

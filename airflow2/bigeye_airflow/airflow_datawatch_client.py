@@ -12,6 +12,7 @@ class AirflowDatawatchClient(DatawatchClient):
         self.conn_id = connection_id
         pass
 
+    # TODO Will need to change to _call_datawatch_impl in sdk 0.3.7
     def _call_datawatch(self, method: Method, url, body: str = None):
         bigeye_request_hook = self._get_hook(method.name)
         try:
