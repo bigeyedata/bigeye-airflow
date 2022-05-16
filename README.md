@@ -8,7 +8,11 @@ bash quickstart.sh -i
 ```
 Run
 ```shell
-bash quickstart.sh
+bash quickstart.sh -r
+```
+Stop
+```shell
+bash quickstart -s
 ```
 
 ### Credentials Setup
