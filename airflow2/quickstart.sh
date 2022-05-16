@@ -43,12 +43,11 @@ then
   . venv/bin/activate
 
   pip install wheel
-  pip install -r requirements.txt
+  pip install --no-cache-dir -r requirements.txt
 
   # initialize the database
   airflow db init
-
-airflow users  create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
+  airflow users  create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
 fi
 
 if $run -eq true
