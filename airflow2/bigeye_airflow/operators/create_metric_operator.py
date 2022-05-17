@@ -89,4 +89,4 @@ class CreateMetricOperator(ClientExtensibleOperator):
             if should_backfill and result.id is not None and table_has_metric_time(table):
                 self.get_client().backfill_metric(metric_ids=[result.id])
 
-            return created_metrics_ids
+        return created_metrics_ids
