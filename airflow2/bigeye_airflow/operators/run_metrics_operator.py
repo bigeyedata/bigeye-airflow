@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from bigeye_sdk.datawatch_client import DatawatchClient
+from bigeye_sdk.client.datawatch_client import DatawatchClient
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 

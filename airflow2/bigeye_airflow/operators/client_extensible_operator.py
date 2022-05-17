@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from airflow.models import BaseOperator
-from bigeye_sdk.datawatch_client import DatawatchClient
+from bigeye_sdk.client.datawatch_client import DatawatchClient
 
 
 class ClientExtensibleOperator(BaseOperator):
