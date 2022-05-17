@@ -54,7 +54,7 @@ class CreateMetricOperator(ClientExtensibleOperator):
         # Iterate each configuration
         for c in self.configuration:
 
-            r = self.get_client().upsert_metric_from_simple_template(warehouse_id=self.warehouse_id, sumr=c)
+            r = self.get_client().upsert_metric_from_simple_template(sumr=c, target_warehouse_id=self.warehouse_id)
             created_metrics_ids.append(r)
 
         return created_metrics_ids
