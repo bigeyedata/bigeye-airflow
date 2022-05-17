@@ -37,8 +37,14 @@ fi
 # (optional)
 export AIRFLOW_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "AIRFLOW_HOME: $AIRFLOW_HOME"
-echo "Installing Json Query CLI"
-sudo apt install jq
+
+if ! command -v jq &> /dev/null
+then
+  echo "Installing Json Query CLI"
+  sudo apt install jq
+fi
+
+
 BIGEYE_USER=$(jq -r '.user' < "$BIGEYE_API_CRED_FILE")
 BIGEYE_PASS=$(jq -r '.password' < "$BIGEYE_API_CRED_FILE")
 BIGEYE_URL=$(jq -r '.base_url' < "$BIGEYE_API_CRED_FILE")
