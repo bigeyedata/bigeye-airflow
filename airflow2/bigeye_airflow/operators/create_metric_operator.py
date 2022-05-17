@@ -2,7 +2,8 @@ import logging
 from typing import List
 
 from bigeye_sdk.datawatch_client import DatawatchClient
-from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
+from bigeye_sdk.functions.metric_functions import is_freshness_metric
+from bigeye_sdk.functions.table_functions import table_has_metric_time
 from bigeye_sdk.generated.com.torodata.models.generated import Table
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 
@@ -41,12 +42,10 @@ class CreateMetricOperator(ClientExtensibleOperator):
         self.connection_id = connection_id
         self.client = None
 
-
     def get_client(self) -> DatawatchClient:
         if not self.client:
             self.client = AirflowDatawatchClient(self.connection_id)
         return self.client
-
 
     def execute(self, context):
         created_metrics_ids: List[int] = []
@@ -57,21 +56,23 @@ class CreateMetricOperator(ClientExtensibleOperator):
             if c.metric_template.metric_name is None:
                 raise Exception("Metric name must be present in configuration", c)
 
-
             table: Table = self.get_client().get_tables(warehouse_id=[self.warehouse_id], schema=[c.schema_name],
-                                                  table_name=[c.table_name]).tables[0]
+                                                        table_name=[c.table_name]).tables[0]
 
             if not table:
                 raise Exception("Could not find table: ", c.schema_name, c.table_name)
 
             c.existing_metric = self.get_client().get_existing_metric(self.warehouse_id,
-                                                                table,
-                                                                c.column_name,
-                                                                c.metric_template.metric_name,
-                                                                c.metric_template.group_by,
-                                                                c.metric_template.filters)
+                                                                      table,
+                                                                      c.column_name,
+                                                                      c.metric_template.user_defined_metric_name,
+                                                                      c.metric_template.metric_name,
+                                                                      c.metric_template.group_by,
+                                                                      c.metric_template.filters)
 
-            metric = c.build_upsert_request_object(target_table=table)
+            metric = c.metric_template.build_upsert_request_object(target_table=table,
+                                                                   column_name=c.column_name,
+                                                                   existing_metric=c.existing_metric)
 
             should_backfill = False
             if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
