@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from bigeye_sdk.datawatch_client import DatawatchClient
+from bigeye_sdk.client.datawatch_client import DatawatchClient
 from bigeye_sdk.functions.metric_functions import is_freshness_metric
 from bigeye_sdk.functions.table_functions import table_has_metric_time
 from bigeye_sdk.generated.com.torodata.models.generated import Table
