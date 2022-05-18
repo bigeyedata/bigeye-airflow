@@ -14,8 +14,6 @@ class AirflowDatawatchClient(DatawatchClient):
     def _get_hook(self, method) -> HttpHook:
         return HttpHook(http_conn_id=self.conn_id, method=method)
 
-        # TODO Will need to change to _call_datawatch_impl in sdk 0.3.7
-
     def _call_datawatch_impl(self, method: Method, url, body: str = None):
         bigeye_request_hook = self._get_hook(method.name)
         try:
@@ -31,7 +29,6 @@ class AirflowDatawatchClient(DatawatchClient):
         if response.status_code != 204:
             return response.json()
 
-    # TODO Will need to change to _call_datawatch_impl in sdk 0.3.7
     def _call_datawatch(self, method: Method, url, body: str = None):
         url = url.replace('//', '/')
         return self._call_datawatch_impl(method=method, url=url, body=body)
