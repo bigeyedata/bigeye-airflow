@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from bigeye_sdk.datawatch_client import DatawatchClient
+from bigeye_sdk.client.datawatch_client import DatawatchClient
 from bigeye_sdk.generated.com.torodata.models.generated import Table, MetricConfiguration, \
     MetricInfo, MetricRunStatus
 
@@ -71,7 +71,7 @@ class RunMetricsOperator(ClientExtensibleOperator):
             table = self._get_table_for_name(self.schema_name, self.table_name)
             metrics: List[MetricConfiguration] = self.get_client().search_metric_configuration(
                 warehouse_ids=[table.warehouse_id],
-                table_ids=[table.id]).metrics
+                table_ids=[table.id])
 
             return [m.id for m in metrics]
         else:

@@ -1,9 +1,8 @@
 import logging
 from typing import List
 
-from bigeye_sdk.datawatch_client import DatawatchClient
-from bigeye_sdk.functions.metric_functions import is_freshness_metric, table_has_metric_time
-from bigeye_sdk.generated.com.torodata.models.generated import Table
+from bigeye_sdk.client.datawatch_client import DatawatchClient
+
 from bigeye_sdk.model.configuration_templates import SimpleUpsertMetricRequest
 
 from bigeye_airflow.airflow_datawatch_client import AirflowDatawatchClient
@@ -52,33 +51,8 @@ class CreateMetricOperator(ClientExtensibleOperator):
         # Iterate each configuration
         for c in self.configuration:
 
-            if c.metric_template.metric_name is None:
-                raise Exception("Metric name must be present in configuration", c)
+            r = self.get_client().upsert_metric_from_simple_template(sumr=c, target_warehouse_id=self.warehouse_id)
+            created_metrics_ids.append(r)
 
-            table: Table = self.get_client().get_tables(warehouse_id=[self.warehouse_id], schema=[c.schema_name],
-                                                  table_name=[c.table_name]).tables[0]
+        return created_metrics_ids
 
-            if not table:
-                raise Exception("Could not find table: ", c.schema_name, c.table_name)
-
-            c.existing_metric = self.get_client().get_existing_metric(self.warehouse_id,
-                                                                table,
-                                                                c.column_name,
-                                                                c.metric_template.metric_name,
-                                                                c.metric_template.group_by,
-                                                                c.metric_template.filters)
-
-            metric = c.build_upsert_request_object(target_table=table)
-
-            should_backfill = False
-            if metric.id is None and not is_freshness_metric(c.metric_template.metric_name):
-                should_backfill = True
-
-            result = self.get_client().create_metric(metric_configuration=metric)
-            created_metrics_ids.append(result.id)
-
-            logging.info("Create result: %s", result.to_json())
-            if should_backfill and result.id is not None and table_has_metric_time(table):
-                self.get_client().backfill_metric(metric_ids=[result.id])
-
-            return created_metrics_ids
