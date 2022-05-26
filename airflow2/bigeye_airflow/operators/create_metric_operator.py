@@ -32,10 +32,12 @@ class CreateMetricOperator(ClientExtensibleOperator):
 
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
         self.connection_id = connection_id
-        self.warehouse_id = warehouse_id
 
-        self.configuration = [SimpleUpsertMetricRequest.from_dict(c)
-                              for c in configuration]
+        self.configuration = []
+
+        for c in configuration:
+            c['warehouse_id'] = self.warehouse_id
+            self.configuration.append(SimpleUpsertMetricRequest.from_dict(c))
 
         self.connection_id = connection_id
         self.client = None
@@ -51,7 +53,7 @@ class CreateMetricOperator(ClientExtensibleOperator):
         # Iterate each configuration
         for c in self.configuration:
 
-            r = self.get_client().upsert_metric_from_simple_template(sumr=c, target_warehouse_id=self.warehouse_id)
+            r = self.get_client().upsert_metric_from_simple_template(sumr=c)
             created_metrics_ids.append(r)
 
         return created_metrics_ids
