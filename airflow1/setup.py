@@ -6,7 +6,7 @@ with open("../README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="bigeye_airflow",
+    name="bigeye_airflow1",
     version=version,
     author="Bigeye",
     author_email="support@bigeye.com",
