@@ -281,7 +281,7 @@ class CreateMetricOperator(BaseOperator):
                     return "HOURS_SINCE_MAX_DATE"
 
     def _get_time_interval_for_delay_string(self, delay_at_update, metric_name, update_schedule):
-        split_input = delay_at_update.split(" ")
+        split_input = delay_at_update.split(" ", 1)
         interval_value = int(split_input[0])
         interval_type = self._get_proto_interval_type(split_input[1])
         if metric_name == "HOURS_SINCE_MAX_DATE":
@@ -298,7 +298,7 @@ class CreateMetricOperator(BaseOperator):
                 logging.info("total days to use for delay {}".format(days_since_last_business_day))
                 interval_type = "HOURS_TIME_INTERVAL_TYPE"
                 interval_value = (days_since_last_business_day + lookback_weekdays) * 24 + hours_from_cron
-            else:
+            elif interval_type == "DAYS_TIME_INTERVAL_TYPE":
                 interval_type = "HOURS_TIME_INTERVAL_TYPE"
                 interval_value = interval_value * 24 + hours_from_cron
         return {
@@ -321,6 +321,8 @@ class CreateMetricOperator(BaseOperator):
             return "HOURS_TIME_INTERVAL_TYPE"
         elif "weekday" in interval_type:
             return "WEEKDAYS_TIME_INTERVAL_TYPE"
+        elif "market day" in interval_type:
+            return "MARKET_DAYS_TIME_INTERVAL_TYPE"
         elif "day" in interval_type:
             return "DAYS_TIME_INTERVAL_TYPE"
 
