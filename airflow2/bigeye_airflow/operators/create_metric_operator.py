@@ -25,16 +25,15 @@ class CreateMetricOperator(ClientExtensibleOperator):
         param connection_id: string referencing a defined connection in the Airflow deployment.
         param warehouse_id: int id of the warehouse where the operator will upsert the metrics.
         param configuration: list of metric configurations to upsert.  The dicts passed as a list must conform to the
-        dataclass SimpleMetricTemplate.
+        dataclass SimplePredefinedMetricTemplate.
         param args: not currently supported
         param kwargs: not currently supported
         """
 
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
         self.connection_id = connection_id
-        self.warehouse_id = warehouse_id
 
-        self.configuration = [SimpleUpsertMetricRequest.from_dict(c)
+        self.configuration = [SimpleUpsertMetricRequest(**c)
                               for c in configuration]
 
         self.connection_id = connection_id
@@ -51,7 +50,7 @@ class CreateMetricOperator(ClientExtensibleOperator):
         # Iterate each configuration
         for c in self.configuration:
 
-            r = self.get_client().upsert_metric_from_simple_template(sumr=c, target_warehouse_id=self.warehouse_id)
+            r = self.get_client().upsert_metric_from_simple_template(sumr=c)
             created_metrics_ids.append(r)
 
         return created_metrics_ids
