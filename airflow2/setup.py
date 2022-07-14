@@ -4,7 +4,8 @@ from __version__ import version
 
 with open("../README.md", "r") as fh:
     long_description = fh.read()
-
+with open("requirements.txt", "r", encoding="utf-8") as fh:
+    requirements = fh.read()
 setup(
     name="bigeye-airflow",
     version=version,
@@ -16,6 +17,7 @@ setup(
     url="https://github.com/torodata/toro-airflow",
     packages=find_packages(exclude=['tests', 'astro']),
     include_package_data=True,
+    install_requires=[requirements],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

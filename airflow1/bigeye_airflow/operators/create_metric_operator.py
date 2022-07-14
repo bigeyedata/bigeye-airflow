@@ -1,6 +1,8 @@
 import datetime
 import json
 import logging
+from typing import List
+
 from airflow.hooks.http_hook import HttpHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -54,6 +56,7 @@ class CreateMetricOperator(BaseOperator):
     def execute(self, context):
 
         num_failing_metric_runs = 0
+        created_metrics_ids: List[int] = []
 
         for c in self.configuration:
             table_name = c["table_name"]
@@ -112,6 +115,9 @@ class CreateMetricOperator(BaseOperator):
 
             logging.info("Create metric status: %s", result.status_code)
             logging.info("Create result: %s", result.json())
+            logging.info(f"Created Metric ID: {metric_id}")
+
+            created_metrics_ids.append(metric_id)
 
             if should_backfill and metric_id is not None and self._table_has_metric_time(table):
                 bigeye_post_hook.run("api/v1/metrics/backfill",
@@ -119,18 +125,21 @@ class CreateMetricOperator(BaseOperator):
                                      data=json.dumps({"metricIds": [result.json()["id"]]}))
 
             if self.run_after_upsert and metric_id is not None:
-                logging.debug("Running metric: %s", metric)
-                logging.debug(f"Running metric: {metric}")
-                metric_result = hook.run(f"statistics/runOne/{id}")
+                hook = self.get_hook('GET')
+                logging.info(f"Running metric: {metric}")
+                metric_result = hook.run(
+                    f"statistics/runOne/{metric_id}",
+                    headers={"Content-Type": "application/json", "Accept": "application/json"}).json()
+
                 for mr in metric_result:
                     if not mr['statusOk']:
-                        logging.error("Metric is not OK: %s", m)
+                        logging.error("Metric is not OK: %s", metric_id)
                         logging.error("Metric result: %s", mr)
                         num_failing_metric_runs += 1
 
-        if num_failing_metric_runs > 0:
-            error_message = "There are {num_failing} failing metrics; see logs for more details"
-            raise ValueError(error_message.format(num_failing=num_failing_metric_runs))
+        return created_metrics_ids
+
+
 
     def _table_has_metric_time(self, table):
         for field in table["fields"]:
