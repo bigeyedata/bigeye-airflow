@@ -1,0 +1,2 @@
+apache-airflow==1.10.15
+setuptools~=57.0.0
