@@ -35,17 +35,6 @@ def enforce_lookback_type_defaults(metric_name: str, lookback_type: str) -> str:
 
 class CreateMetricOperator(BaseOperator):
 
-    # Only for Python 3.8+
-    # TODO - find a way to check what Python version is running
-    # class FreshnessConfig(TypedDict, total=False):
-    #     schema_name: str
-    #     table_name: str
-    #     column_name: str
-    #     hours_between_update: int
-    #     hours_delay_at_update: int
-    #     notifications: List[str]
-    #     default_check_frequency_hours: int
-
     @apply_defaults
     def __init__(self,
                  connection_id: str,
@@ -53,14 +42,19 @@ class CreateMetricOperator(BaseOperator):
                  configuration: list(dict(schema_name=None, table_name=None, column_name=None,
                                           update_schedule=None, metric_name=None,
                                           extras=...)),
+                 run_after_upsert: bool = False,
                  *args,
                  **kwargs):
         super(CreateMetricOperator, self).__init__(*args, **kwargs)
         self.connection_id = connection_id
         self.warehouse_id = warehouse_id
         self.configuration = configuration
+        self.run_after_upsert = run_after_upsert
 
     def execute(self, context):
+
+        num_failing_metric_runs = 0
+
         for c in self.configuration:
             table_name = c["table_name"]
             schema_name = c["schema_name"]
@@ -113,12 +107,30 @@ class CreateMetricOperator(BaseOperator):
             result = bigeye_post_hook.run("api/v1/metrics",
                                           headers={"Content-Type": "application/json", "Accept": "application/json"},
                                           data=json.dumps(metric))
+
+            metric_id = result.json().get("id")
+
             logging.info("Create metric status: %s", result.status_code)
             logging.info("Create result: %s", result.json())
-            if should_backfill and result.json().get("id") is not None and self._table_has_metric_time(table):
+
+            if should_backfill and metric_id is not None and self._table_has_metric_time(table):
                 bigeye_post_hook.run("api/v1/metrics/backfill",
                                      headers={"Content-Type": "application/json", "Accept": "application/json"},
                                      data=json.dumps({"metricIds": [result.json()["id"]]}))
+
+            if self.run_after_upsert and metric_id is not None:
+                logging.debug("Running metric: %s", metric)
+                logging.debug(f"Running metric: {metric}")
+                metric_result = hook.run(f"statistics/runOne/{id}")
+                for mr in metric_result:
+                    if not mr['statusOk']:
+                        logging.error("Metric is not OK: %s", m)
+                        logging.error("Metric result: %s", mr)
+                        num_failing_metric_runs += 1
+
+        if num_failing_metric_runs > 0:
+            error_message = "There are {num_failing} failing metrics; see logs for more details"
+            raise ValueError(error_message.format(num_failing=num_failing_metric_runs))
 
     def _table_has_metric_time(self, table):
         for field in table["fields"]:
